@@ -1,0 +1,31 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Upgrade Subscription";
+}
+<h1>Upgrade Subscription</h1>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Upgrade">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label for="plan" class="control-label">Select Plan</label>
+                <select name="plan" class="form-control">
+                    @foreach (var plan in ViewBag.Plans)
+                    {
+                        <option value="@plan.Name">@plan.Name - @plan.Price/month (@plan.Description)</option>
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Upgrade" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

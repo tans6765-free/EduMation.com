@@ -1,0 +1,85 @@
+﻿@model EduMation.Models.Video
+@{
+    ViewData["Title"] = @Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var favoritedVideoIds = ViewBag.FavoritedVideoIds as List<int> ?? new List<int>();
+}
+<div class="container">
+    <h2>@Model.Title</h2>
+    <div class="row">
+        <div class="col-md-8">
+            <video id="videoPlayer" width="100%" controls>
+                <source src="@Model.VideoUrl" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+        <div class="col-md-4">
+            <h4>Details</h4>
+            <p><strong>Genre:</strong> @Model.Genre</p>
+            <p><strong>Uploaded:</strong> @Model.UploadDate.ToString("MMM dd, yyyy")</p>
+            <p><strong>Description:</strong> @Model.Description</p>
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                var isFavorited = favoritedVideoIds.Contains(Model.Id);
+                <form asp-action="@(isFavorited ? "Remove" : "Add")" asp-controller="Favorites" method="post">
+                    <input type="hidden" name="videoId" value="@Model.Id" />
+                    <input type="hidden" name="returnUrl" value="@Url.Action("Details", "Videos", new { id = Model.Id })" />
+                    <button type="submit" class="btn btn-primary">@(isFavorited ? "Remove from Favorites" : "Add to Favorites")</button>
+                </form>
+            }
+        </div>
+    </div>
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary mt-3">Back to Home</a>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var video = document.getElementById("videoPlayer");
+            var hasPlayed = false;
+
+            // Ensure the video element exists
+            if (!video) {
+                console.error("Video element not found.");
+                return;
+            }
+
+            // Log when the video is loaded
+            video.onloadeddata = function () {
+                console.log("Video loaded successfully.");
+            };
+
+            // Update TotalWatched when the video starts playing
+            video.onplay = function () {
+                if (!hasPlayed) {
+                    hasPlayed = true;
+                    console.log("Video started playing. Updating TotalWatched...");
+
+                    $.ajax({
+                        url: '@Url.Action("IncrementVideosWatched", "Subscription")',
+                        type: 'POST',
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                console.log("TotalWatched updated successfully. New value: " + response.totalWatched);
+                            } else {
+                                console.error("Failed to update TotalWatched: " + (response.message || "Unknown error"));
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX error: " + status + " - " + error);
+                            console.error("Response: ", xhr.responseText);
+                        }
+                    });
+                }
+            };
+
+            // Log if the video fails to play
+            video.onerror = function () {
+                console.error("Error loading video.");
+            };
+        });
+    </script>
+}

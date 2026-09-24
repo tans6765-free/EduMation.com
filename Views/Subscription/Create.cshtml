@@ -1,0 +1,31 @@
+﻿@model EduMation.Models.Subscription
+@{
+    ViewData["Title"] = "Create Subscription";
+}
+<h1>Create Subscription</h1>
+<div class="container">
+    <form asp-action="Create" method="post">
+        <div class="form-group">
+            <label asp-for="Plan" class="control-label">Plan Name</label>
+            <input asp-for="Plan" class="form-control" style="background-color: #2e3738; color: #ffffff;" value="Custom" readonly />
+            <span asp-validation-for="Plan" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Price" class="control-label">Custom Price ($)</label>
+            <input asp-for="Price" class="form-control" style="background-color: #2e3738; color: #ffffff;" type="number" step="0.01" />
+            <span asp-validation-for="Price" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="EndDate" class="control-label">End Date</label>
+            <input asp-for="EndDate" class="form-control" style="background-color: #2e3738; color: #ffffff;" type="date" />
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
+        <div class="form-group mt-3">
+            <button type="submit" class="btn" style="background-color: #D94F00; border-color: #D94F00;">Subscribe</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

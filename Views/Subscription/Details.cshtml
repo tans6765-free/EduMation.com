@@ -1,0 +1,23 @@
+﻿@model EduMation.Models.Subscription
+@{
+    ViewData["Title"] = "Subscription Details";
+}
+<h1>Subscription Details</h1>
+<div>
+    <h4>Subscription</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Plan</dt>
+        <dd class="col-sm-10">@Model.Plan</dd>
+        <dt class="col-sm-2">Price</dt>
+        <dd class="col-sm-10">@Model.Price</dd>
+        <dt class="col-sm-2">Start Date</dt>
+        <dd class="col-sm-10">@Model.StartDate</dd>
+        <dt class="col-sm-2">Max Videos</dt>
+        <dd class="col-sm-10">@Model.MaxVideos</dd>
+        <dt class="col-sm-2">Videos Watched</dt>
+    </dl>
+</div>
+<div>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>

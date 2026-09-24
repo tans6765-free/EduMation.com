@@ -1,0 +1,109 @@
+﻿@model EduMation.Models.Profile
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<h1 style="margin-bottom: -7rem; font-size: 2.5rem; font-weight: bold;">My Profile</h1>
+<div class="container">
+    <div class="card profile-card">
+        <div class="card-body position-relative">
+            <img src="@(Model?.ProfilePicturePath ?? "/images/default-profile.png")" alt="Profile Picture" class="profile-picture" />
+            <h5 class="card-title profile-label">Name: <span class="profile-value">@(Model?.FirstName ?? "User") @(Model?.LastName ?? "")</span></h5>
+            <p class="card-text profile-label">Email: <span class="profile-value">@(Model?.Email ?? "N/A")</span></p>
+            <p class="card-text profile-label">Contact Number: <span class="profile-value">@(Model?.ContactNumber ?? "N/A")</span></p>
+            <p class="card-text profile-label">Age: <span class="profile-value">@(Model?.Age.ToString() ?? "N/A")</span></p>
+            <p class="card-text profile-label">Address: <span class="profile-value">@(Model?.Address ?? "N/A")</span></p>
+        </div>
+    </div>
+
+    <h3 class="mt-4">Edit Profile</h3>
+
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-warning">
+            <ul>
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="UserId" />
+        <input type="hidden" asp-for="Email" value="@Model?.Email" readonly />
+        <div class="form-group">
+            <label asp-for="FirstName" class="control-label"></label>
+            <input asp-for="FirstName" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="LastName" class="control-label"></label>
+            <input asp-for="LastName" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ContactNumber" class="control-label"></label>
+            <input asp-for="ContactNumber" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="ContactNumber" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Age" class="control-label"></label>
+            <input asp-for="Age" class="form-control" style="background-color: #2e3738; color: #ffffff;" type="number" />
+            <span asp-validation-for="Age" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Address" class="control-label"></label>
+            <input asp-for="Address" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="Address" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label for="profilePicture" class="control-label">Profile Picture</label>
+            <input type="file" name="profilePicture" class="form-control" accept="image/*" style="background-color: #2e3738; color: #ffffff;" />
+        </div>
+        <div class="form-group mt-3">
+            <button type="submit" class="btn" style="background-color: #D94F00; border-color: #D94F00;">Save Changes</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .profile-card {
+        background-color: #1C2526;
+        border: 2px solid #28a745; /* Green border matching search */
+        border-radius: 5px;
+    }
+
+    .card-body {
+        color: #ffffff;
+    }
+
+    .profile-label {
+        font-weight: 600; /* Slightly bold */
+    }
+
+    .profile-value {
+        color: #d96e30; /* Rustic orange */
+    }
+
+    .card-title, .card-text {
+        margin-bottom: 10px;
+    }
+
+    .profile-picture {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #28a745;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

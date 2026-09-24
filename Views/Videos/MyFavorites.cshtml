@@ -1,0 +1,49 @@
+﻿@model IEnumerable<EduMation.Models.Video>
+@{
+    ViewData["Title"] = "My Favorites";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var favoritedVideoIds = ViewBag.FavoritedVideoIds as List<int> ?? new List<int>();
+}
+<div class="container">
+    <h2>My Favorites</h2>
+    @if (!Model.Any())
+    {
+        <p>You have no favorite videos yet.</p>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var video in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <a href="@Url.Action("Details", "Videos", new { id = video.Id })">
+                            @if (!string.IsNullOrEmpty(video.ThumbnailUrl))
+                            {
+                                <img src="@video.ThumbnailUrl" class="card-img-top" alt="@video.Title Thumbnail" style="height: 200px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <img src="/Uploads/thumbnails/default.jpg" class="card-img-top" alt="Default Thumbnail" style="height: 200px; object-fit: cover;" />
+                            }
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title" style="color: #D87A3A;">@video.Title</h5>
+                            <p class="card-text">
+                                <small class="text-muted" style="color: #28A745 !important;">@video.Genre • Uploaded on @video.UploadDate.ToString("MMM dd, yyyy")</small>
+                            </p>
+                            <div class="d-flex gap-2">
+                                <a asp-action="Details" asp-controller="Videos" asp-route-id="@video.Id" class="btn btn-success">Watch Now</a>
+                                <form asp-action="RemoveFromFavorites" asp-controller="Videos" method="post">
+                                    <input type="hidden" name="videoId" value="@video.Id" />
+                                    <button type="submit" class="btn btn-primary">Remove from Favorites</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <a asp-action="Index" asp-controller="Videos" class="btn btn-secondary">Back to Videos</a>
+</div>

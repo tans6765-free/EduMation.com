@@ -1,0 +1,45 @@
+﻿@model IEnumerable<EduMation.Models.WatchHistory>
+@{
+    ViewData["Title"] = "Watch History";
+}
+<h1 style="margin-bottom: -7rem; font-size: 2.5rem; font-weight: bold;">Watch History</h1>
+<div class="container">
+    @if (Model.Any())
+    {
+        <form asp-action="Clear" method="post" class="mb-3">
+            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to clear your watch history?')">Clear History</button>
+        </form>
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <a href="@Url.Action("Details", "Videos", new { id = item.Video.Id })">
+                            @if (!string.IsNullOrEmpty(item.Video.ThumbnailUrl))
+                            {
+                                <img src="@item.Video.ThumbnailUrl" class="card-img-top" alt="@item.Video.Title Thumbnail" style="height: 200px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <img src="/Uploads/thumbnails/default.jpg" class="card-img-top" alt="Default Thumbnail" style="height: 200px; object-fit: cover;" />
+                            }
+                        </a>
+                        <div class="card-body">
+                            <h5 class="card-title">@item.Video.Title</h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    @item.Video.Genre • Watched on @item.WatchDate.ToString("MMM dd, yyyy HH:mm") • Watched @item.WatchCount time@(item.WatchCount > 1 ? "s" : "")
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p>No watch history available.</p>
+    }
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Back to Home</a>
+</div>

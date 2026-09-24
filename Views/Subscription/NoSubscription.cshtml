@@ -1,0 +1,12 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "No Subscription";
+}
+<h1>No Subscription</h1>
+<div class="container">
+    <p>You don't have any subscriptions.</p>
+    <div class="mt-3">
+        <a asp-action="Create" asp-controller="Subscription" class="btn" style="background-color: #D94F00; color: #ffffff;">Create Subscription</a>
+        <a asp-action="Upgrade" asp-controller="Subscription" class="btn" style="background-color: #D94F00; color: #ffffff; margin-left: 10px;">Upgrade Subscription</a>
+    </div>
+</div>

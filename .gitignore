@@ -1,0 +1,14 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+# Build and IDE output
+bin/
+obj/
+.vs/
+
+# Local user settings
+*.user
+*.suo
+
+*.vsidx

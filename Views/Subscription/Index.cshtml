@@ -1,0 +1,43 @@
+﻿@model EduMation.Models.Subscription
+@{
+    ViewData["Title"] = "Subscription";
+}
+<h1 style="margin-bottom: -7rem; font-size: 2.5rem; font-weight: bold;">Subscription</h1>
+<div class="container">
+    @if (Model == null)
+    {
+        <p>You don't have any subscriptions.</p>
+        <p><strong>Videos Watched This Month:</strong> @(ViewBag.VideosWatchedThisMonth ?? 0)</p>
+        <p><strong>Total Watched Since Subscription:</strong> @(ViewBag.TotalWatchedSinceSubscription ?? 0)</p>
+    }
+    else
+    {
+        <h3>Current Subscription</h3>
+        <p><strong>Plan:</strong> @Model.Plan</p>
+        <p><strong>Start Date:</strong> @Model.StartDate.ToString("MMM dd, yyyy")</p>
+        <p><strong>End Date:</strong> @Model.EndDate.ToString("MMM dd, yyyy")</p>
+        <p><strong>Price:</strong> $@Model.Price</p>
+        <p><strong>Max Videos:</strong> @Model.MaxVideos</p>
+        <p><strong>Videos Remaining:</strong> @(Model.MaxVideos - Model.TotalWatched > 0 ? (Model.MaxVideos - Model.TotalWatched) : 0)</p>
+        <p><strong>Total Watched:</strong> @(ViewBag.TotalWatched ?? Model.TotalWatched)</p>
+        <p><strong>Is Active:</strong> @(Model.IsActive ? "Yes" : "No")</p>
+        <div class="mt-3">
+            <form asp-action="Delete" asp-controller="Subscription" method="post" style="display: inline;">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn" style="background-color: #ff4444; color: #ffffff;" onclick="return confirm('Are you sure you want to delete your subscription?');">Delete Subscription</button>
+            </form>
+        </div>
+    }
+    <div class="mt-3">
+        <a asp-action="Create" asp-controller="Subscription" class="btn" style="background-color: #D94F00; color: #ffffff;">Create Subscription</a>
+        <a asp-action="Upgrade" asp-controller="Subscription" class="btn" style="background-color: #D94F00; color: #ffffff; margin-left: 10px;">Upgrade Subscription</a>
+    </div>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-3">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success mt-3">@TempData["Message"]</div>
+    }
+</div>

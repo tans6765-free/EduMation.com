@@ -1,0 +1,41 @@
+﻿@model EduMation.Models.Video
+@{
+    ViewData["Title"] = "Create Video";
+}
+<h1>Create Video</h1>
+<div class="container">
+    <form asp-action="Create" method="post">
+        <div class="form-group">
+            <label asp-for="Title" class="control-label"></label>
+            <input asp-for="Title" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Genre" class="control-label"></label>
+            <input asp-for="Genre" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="Genre" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Description" class="control-label"></label>
+            <textarea asp-for="Description" class="form-control" style="background-color: #2e3738; color: #ffffff;"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="VideoUrl" class="control-label"></label>
+            <input asp-for="VideoUrl" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="VideoUrl" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="ThumbnailUrl" class="control-label"></label>
+            <input asp-for="ThumbnailUrl" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
+            <span asp-validation-for="ThumbnailUrl" class="text-danger"></span>
+        </div>
+        <div class="form-group mt-3">
+            <button type="submit" class="btn" style="background-color: #D94F00; border-color: #D94F00;">Create</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

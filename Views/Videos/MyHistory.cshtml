@@ -1,0 +1,29 @@
+﻿@model IEnumerable<EduMation.ViewModels.WatchHistoryViewModel>
+@{
+    ViewData["Title"] = "My Watch History";
+}
+<h1>My Watch History</h1>
+@if (Model?.Any() == true)
+{
+    <div class="video-row d-flex flex-row flex-nowrap overflow-auto">
+        @foreach (var item in Model)
+        {
+            if (item?.Video != null)
+            {
+                <div class="card m-2" style="min-width: 200px; background-color: #1C2526; color: #ffffff;">
+                    <img src="@(item.Video.ThumbnailUrl ?? "/Uploads/thumbnails/default.jpg")" class="card-img-top" alt="@(item.Video.Title ?? "Video")" />
+                    <div class="card-body">
+                        <h5 class="card-title">@(item.Video.Title ?? "Untitled")</h5>
+                        <p class="card-text">@(item.Video.Genre ?? "Unknown")</p>
+                        <p class="card-text">Watched: @item.LastWatched.ToString("g")</p>
+                        <a asp-controller="Video" asp-action="Watch" asp-route-videoId="@item.Video.Id" class="btn btn-primary" style="background-color: #D94F00; border-color: #D94F00;">Watch Again</a>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
+else
+{
+    <p>No watch history found. <a asp-controller="Video" asp-action="Index">Browse videos</a> to start watching!</p>
+}

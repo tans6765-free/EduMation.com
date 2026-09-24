@@ -1,0 +1,141 @@
+/* Rustic Orange and Matte Black theme */
+body {
+    background-color: #1C2526; /* Matte Black */
+    color: #E8E8E8; /* Light gray for readability */
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: #E8E8E8;
+    font-weight: bold;
+}
+
+a {
+    color: #D94F00; /* Rustic Orange */
+    text-decoration: none;
+}
+
+    a:hover {
+        color: #FF6F00; /* Lighter orange on hover */
+    }
+
+/* Navigation bar */
+.navbar {
+    background-color: #1C2526; /* Matte Black */
+    padding: 10px 20px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    max-height: 100px; /* Reduced from 140px to make navbar shorter */
+}
+
+.navbar-brand {
+    color: #D94F00 !important; /* Rustic Orange */
+    font-size: 15px; /* Tagline font size */
+    font-weight: bold;
+    display: flex;
+    flex-direction: column; /* Stack logo and tagline vertically */
+    align-items: flex-start; /* Changed to flex-start to move logo and tagline to the left */
+    justify-content: center; /* Center vertically */
+    text-align: center;
+    padding: 0; /* Remove default padding */
+    margin-right: -10px; /* Reduced from 20px to bring logo closer to the left edge */
+}
+.navbar-nav {
+    margin-left: -200px; /* Pull nav items closer to the logo */
+}
+
+    .navbar-brand img {
+        width: 180px; /* Logo width */
+        height: auto; /* Height scales proportionally */
+        object-fit: contain; /* Ensure logo fits without distortion */
+        margin-top: -65px;
+        margin-bottom:-65px; /* Reduced from 1px to bring tagline closer to logo */
+    }
+
+    .navbar-brand span {
+        white-space: nowrap; /* Prevent tagline from wrapping */
+        line-height: 1.2; /* Improve readability */
+    }
+
+/* Ensure navbar sections align properly */
+.navbar-collapse {
+    display: flex !important; /* Override Bootstrap collapse behavior */
+    justify-content: space-between !important; /* Restore original alignment */
+    align-items: center !important; /* Center vertically */
+}
+
+/* Container for content */
+.container {
+    margin-top: 130px; /* Adjusted to match new navbar height to prevent overlap */
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #D94F00; /* Rustic Orange */
+    border: none;
+    padding: 10px 20px;
+    font-weight: bold;
+}
+
+    .btn-primary:hover {
+        background-color: #FF6F00; /* Lighter orange */
+    }
+
+.btn-secondary {
+    background-color: #4A4A4A; /* Dark gray */
+    border: none;
+}
+
+    .btn-secondary:hover {
+        background-color: #6A6A6A;
+    }
+
+/* Footer */
+footer {
+    background-color: #1C2526;
+    color: #A0A0A0;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+/* Table styling */
+.table {
+    background-color: #2A2F30;
+    color: #E8E8E8;
+}
+
+    .table th, .table td {
+        border-color: #4A4A4A;
+    }
+
+.table-dark {
+    background-color: #2A2F30;
+}
+
+/* Form controls */
+.form-control {
+    background-color: #2A2F30;
+    color: #E8E8E8;
+    border-color: #4A4A4A;
+}
+
+    .form-control:focus {
+        background-color: #3A3F40;
+        border-color: #D94F00;
+        color: #E8E8E8;
+    }
+
+/* Alert styling */
+.alert-primary {
+    background-color: #D94F00;
+    color: #E8E8E8;
+    border-color: #FF6F00;
+}
