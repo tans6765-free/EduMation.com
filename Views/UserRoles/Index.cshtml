@@ -1,0 +1,27 @@
+@model IReadOnlyList<EduMation.ViewModel.UserRoleViewModel>
+@{
+    ViewData["Title"] = "User Roles";
+}
+
+<section class="page-hero compact-hero">
+    <div><p class="eyebrow">Admin access control</p><h1>Users and roles.</h1><p class="hero-copy">Assign Tutor and Editor access without changing student accounts.</p></div>
+</section>
+<section class="content-section">
+    <div class="import-list">
+        @foreach (var user in Model)
+        {
+            <div class="import-row">
+                <div><strong>@user.UserName</strong><span>@user.Email</span></div>
+                <form asp-action="SetRole" asp-route-id="@user.UserId" method="post" class="verify-form">
+                    <select name="role" aria-label="Role for @user.UserName">
+                        @foreach (var role in new[] { "Student", "Tutor", "Editor", "Admin" })
+                        {
+                            <option value="@role" selected="@(user.Role == role)">@role</option>
+                        }
+                    </select>
+                    <button class="button button-dark" type="submit">Save role</button>
+                </form>
+            </div>
+        }
+    </div>
+</section>

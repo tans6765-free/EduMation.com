@@ -6,7 +6,7 @@ using EduMation.Models;
 
 namespace EduMation.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Editor,Tutor")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;

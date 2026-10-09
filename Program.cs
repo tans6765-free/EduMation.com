@@ -128,10 +128,13 @@ using (var scope = app.Services.CreateScope())
     try
     {
         // Seed roles
-        if (!await roleManager.RoleExistsAsync("Admin"))
+        foreach (var role in new[] { "Admin", "Tutor", "Editor" })
         {
-            await roleManager.CreateAsync(new IdentityRole("Admin"));
-            logger.LogInformation("Admin role created.");
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                await roleManager.CreateAsync(new IdentityRole(role));
+                logger.LogInformation("{Role} role created.", role);
+            }
         }
 
         // Seed admin user

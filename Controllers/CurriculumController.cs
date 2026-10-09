@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace EduMation.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Editor,Tutor")]
 [Route("admin/curriculum")]
 public class CurriculumController : Controller
 {
