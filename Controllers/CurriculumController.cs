@@ -84,6 +84,25 @@ public class CurriculumController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost("verify/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Verify(int id, string verificationStatus)
+    {
+        var allowedStatuses = new[] { "NEEDS_REVIEW", "OFFICIAL_CATALOGUE_VERIFIED", "OFFICIAL_PDF_VERIFIED", "NEEDS_MANUAL_REVIEW" };
+        if (!allowedStatuses.Contains(verificationStatus))
+        {
+            return BadRequest();
+        }
+
+        var sourceBook = await _context.SourceBooks.FindAsync(id);
+        if (sourceBook == null) return NotFound();
+
+        sourceBook.VerificationStatus = verificationStatus;
+        await _context.SaveChangesAsync();
+        TempData["Message"] = "Source-book verification status updated.";
+        return RedirectToAction(nameof(Index));
+    }
+
     private string GetSourceRoot() => Path.IsPathRooted(_options.RootPath)
         ? _options.RootPath
         : Path.Combine(_environment.ContentRootPath, _options.RootPath);

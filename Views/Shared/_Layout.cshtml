@@ -29,6 +29,7 @@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <a asp-controller="WatchHistory" asp-action="Index">My Learning</a>
+                    <a asp-controller="Learn" asp-action="Progress">Progress</a>
                     <a asp-controller="Favorites" asp-action="MyFavorites">Saved</a>
                     <a asp-controller="Subscription" asp-action="Index">Subscription</a>
                     <a asp-controller="Profile" asp-action="Index">Me</a>

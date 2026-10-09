@@ -1,5 +1,8 @@
 using EduMation.Data;
+using EduMation.Models;
 using EduMation.Services;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -56,6 +59,25 @@ public class AiController : Controller
         return Json(new { message = answer });
     }
 
+    [Authorize]
+    [HttpPost("attempt")]
+    public async Task<IActionResult> RecordAttempt([FromBody] AttemptRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Question) || string.IsNullOrWhiteSpace(request.Answer)) return BadRequest();
+        _context.QuestionAttempts.Add(new QuestionAttempt
+        {
+            UserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
+            LessonId = request.LessonId,
+            QuestionText = request.Question,
+            StudentAnswer = request.Answer,
+            IsCorrect = request.IsCorrect,
+            Score = request.Score,
+            Feedback = request.Feedback ?? string.Empty
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+        return Ok();
+    }
+
     private static string TrimExcerpt(string text, string keyword)
     {
         var position = text.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
@@ -65,3 +87,4 @@ public class AiController : Controller
 }
 
 public record TutorRequest(string Question, int? LessonId);
+public record AttemptRequest(int? LessonId, string Question, string Answer, bool IsCorrect, decimal Score, string? Feedback);

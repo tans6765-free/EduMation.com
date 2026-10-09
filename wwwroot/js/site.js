@@ -63,6 +63,18 @@
                     feedback.hidden = false;
                     feedback.className = `answer-feedback ${isCorrect ? 'is-correct' : 'is-incorrect'}`;
                     feedback.innerHTML = `<strong>${isCorrect ? 'Correct' : "Let's understand this."}</strong><span>${question.dataset.explanation}</span>`;
+                    fetch('/ai/attempt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            lessonId: Number(practice.dataset.lessonId),
+                            question: question.querySelector('h2')?.textContent || '',
+                            answer: answer.textContent,
+                            isCorrect,
+                            score: isCorrect ? 1 : 0,
+                            feedback: question.dataset.explanation
+                        })
+                    }).catch(() => undefined);
                     const next = question.querySelector('[data-next]');
                     next.hidden = false;
                     next.textContent = questionIndex === questions.length - 1 ? 'See my result' : 'Next question';

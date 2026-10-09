@@ -12,7 +12,7 @@
     <span class="practice-counter" data-practice-counter>Question 1 of @Model.Questions.Count</span>
 </section>
 
-<section class="question-stage" data-practice data-question-count="@Model.Questions.Count">
+<section class="question-stage" data-practice data-lesson-id="@Model.Lesson.Id" data-question-count="@Model.Questions.Count">
     @for (var index = 0; index < Model.Questions.Count; index++)
     {
         var question = Model.Questions[index];

@@ -100,6 +100,22 @@ using (var scope = app.Services.CreateScope())
             IF COL_LENGTH(N'[SourceBooks]', N'PageCount') IS NULL ALTER TABLE [SourceBooks] ADD [PageCount] int NOT NULL CONSTRAINT [DF_SourceBooks_PageCount] DEFAULT 0;
             IF COL_LENGTH(N'[SourceBooks]', N'ExtractedText') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractedText] nvarchar(max) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractedText] DEFAULT N'';
             IF COL_LENGTH(N'[SourceBooks]', N'ExtractionStatus') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractionStatus] nvarchar(40) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractionStatus] DEFAULT N'NOT_EXTRACTED';
+            IF OBJECT_ID(N'[QuestionAttempts]') IS NULL
+            BEGIN
+                CREATE TABLE [QuestionAttempts] (
+                    [Id] int NOT NULL IDENTITY,
+                    [UserId] nvarchar(450) NOT NULL,
+                    [LessonId] int NULL,
+                    [QuestionText] nvarchar(4000) NOT NULL,
+                    [StudentAnswer] nvarchar(4000) NOT NULL,
+                    [IsCorrect] bit NOT NULL,
+                    [Score] decimal(5,2) NOT NULL,
+                    [Feedback] nvarchar(1200) NOT NULL,
+                    [CreatedAtUtc] datetime2 NOT NULL,
+                    CONSTRAINT [PK_QuestionAttempts] PRIMARY KEY ([Id])
+                );
+                CREATE INDEX [IX_QuestionAttempts_UserId] ON [QuestionAttempts] ([UserId]);
+            END
             """);
         logger.LogInformation("Database migrations applied successfully.");
     }

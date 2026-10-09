@@ -24,6 +24,7 @@ namespace EduMation.Data
         public DbSet<ProtijogMapping> ProtijogMappings { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<SourceBook> SourceBooks { get; set; }
+        public DbSet<QuestionAttempt> QuestionAttempts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

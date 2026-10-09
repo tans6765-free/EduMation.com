@@ -1,0 +1,40 @@
+@model EduMation.ViewModel.ProgressViewModel
+@{
+    ViewData["Title"] = "Progress";
+}
+
+<section class="page-hero compact-hero">
+    <div>
+        <p class="eyebrow">Your learning path</p>
+        <h1>Progress you can see.</h1>
+        <p class="hero-copy">Every completed lesson is one more clear step toward mastery.</p>
+    </div>
+    <div class="progress-stat"><strong data-count-to="@Model.OverallPercent">@Model.OverallPercent%</strong><span>overall progress</span></div>
+</section>
+
+<section class="content-section">
+    <div class="progress-overview">
+        <div><span>Completed lessons</span><strong>@Model.CompletedLessons</strong></div>
+        <div><span>Available lessons</span><strong>@Model.TotalLessons</strong></div>
+        <div><span>Keep going</span><strong>@(Math.Max(0, Model.TotalLessons - Model.CompletedLessons))</strong></div>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Recent activity</p><h2>Continue learning</h2></div></div>
+    <div class="lesson-grid">
+        @foreach (var progress in Model.RecentProgress)
+        {
+            <article class="lesson-card">
+                <div class="lesson-card-top"><span class="lesson-chip">@progress.Lesson.Topic.Title</span><span>@progress.PercentComplete%</span></div>
+                <h3>@progress.Lesson.Title</h3>
+                <div class="progress-track"><span style="width: @progress.PercentComplete%"></span></div>
+                <a class="text-link" asp-action="Lesson" asp-route-id="@progress.LessonId">Continue &rarr;</a>
+            </article>
+        }
+    </div>
+    @if (!Model.RecentProgress.Any())
+    {
+        <div class="empty-state"><h2>Your learning library is waiting.</h2><p>Open a lesson to begin building your progress path.</p><a class="button button-primary" asp-action="Index">Explore lessons</a></div>
+    }
+</section>

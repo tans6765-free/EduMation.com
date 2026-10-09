@@ -118,6 +118,28 @@ public class LearnController : Controller
     }
 
     [Authorize]
+    [HttpGet("/progress")]
+    public async Task<IActionResult> Progress()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var totalLessons = await _context.Lessons.CountAsync(lesson => lesson.IsPublished);
+        var recentProgress = await _context.LessonProgresses
+            .Where(progress => progress.UserId == userId)
+            .Include(progress => progress.Lesson)
+                .ThenInclude(lesson => lesson.Topic)
+            .OrderByDescending(progress => progress.LastViewedAt)
+            .Take(12)
+            .ToListAsync();
+
+        return View(new ProgressViewModel
+        {
+            TotalLessons = totalLessons,
+            CompletedLessons = recentProgress.Count(progress => progress.IsCompleted),
+            RecentProgress = recentProgress
+        });
+    }
+
+    [Authorize]
     [HttpPost("lesson/{id:int}/complete")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteLesson(int id, string? returnUrl)

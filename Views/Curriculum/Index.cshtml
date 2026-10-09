@@ -33,7 +33,18 @@
     <div class="import-list">
         @foreach (var book in Model.RegisteredBooks)
         {
-            <div class="import-row"><div><strong>@book.OriginalFileName</strong><span>@book.ClassLevel / @book.LanguageVersion</span></div><span class="status-pill">@book.VerificationStatus</span></div>
+            <div class="import-row">
+                <div><strong>@book.OriginalFileName</strong><span>@book.ClassLevel / @book.LanguageVersion / @book.PageCount pages / @book.ExtractionStatus</span></div>
+                <form asp-action="Verify" asp-route-id="@book.Id" method="post" class="verify-form">
+                    <select name="verificationStatus" aria-label="Verification status">
+                        <option selected="@(book.VerificationStatus == "NEEDS_REVIEW")">Needs review</option>
+                        <option value="OFFICIAL_CATALOGUE_VERIFIED" selected="@(book.VerificationStatus == "OFFICIAL_CATALOGUE_VERIFIED")">Catalogue verified</option>
+                        <option value="OFFICIAL_PDF_VERIFIED" selected="@(book.VerificationStatus == "OFFICIAL_PDF_VERIFIED")">PDF verified</option>
+                        <option value="NEEDS_MANUAL_REVIEW" selected="@(book.VerificationStatus == "NEEDS_MANUAL_REVIEW")">Manual review</option>
+                    </select>
+                    <button class="button button-dark" type="submit">Save</button>
+                </form>
+            </div>
         }
     </div>
 </section>
