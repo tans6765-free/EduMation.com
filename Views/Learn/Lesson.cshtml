@@ -18,7 +18,7 @@
         @if (Model.Lesson.Video != null && !string.IsNullOrWhiteSpace(Model.Lesson.Video.VideoUrl))
         {
             <div class="lesson-player">
-                <video controls preload="metadata" poster="@Model.Lesson.Video.ThumbnailUrl">
+                <video class="lesson-video" controls preload="metadata" poster="@Model.Lesson.Video.ThumbnailUrl">
                     <source src="@Model.Lesson.Video.VideoUrl" />
                 </video>
             </div>
@@ -47,7 +47,7 @@
     <aside class="lesson-sidebar">
         <h2>Ready to practice?</h2>
         <p>Use a quick EduMation check now, or continue to the future Protijog practice space.</p>
-        <a class="button button-primary button-full" asp-action="Practice">Quick practice</a>
+        <a class="button button-primary button-full" asp-action="LessonPractice" asp-route-id="@Model.Lesson.Id">AI practice</a>
         @if (Model.Lesson.ProtijogMapping is { IsActive: true } mapping)
         {
             <a class="button button-outline button-full" href="@mapping.ExternalPath">@mapping.Title</a>
@@ -61,3 +61,13 @@
         }
     </aside>
 </div>
+
+<section class="practice-moment" data-practice-moment hidden>
+    <div class="practice-moment-icon">&#129504;</div>
+    <div>
+        <p class="eyebrow">Lesson complete</p>
+        <h2>Ready to see what you understood?</h2>
+        <p>Try a short, curriculum-aware practice set before you move on.</p>
+    </div>
+    <a class="button button-primary" asp-action="LessonPractice" asp-route-id="@Model.Lesson.Id">Start AI practice</a>
+</section>

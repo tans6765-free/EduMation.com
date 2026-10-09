@@ -139,6 +139,43 @@ public class LearnController : Controller
         return View();
     }
 
+    [HttpGet("lesson/{id:int}/practice")]
+    public async Task<IActionResult> LessonPractice(int id)
+    {
+        var lesson = await _context.Lessons
+            .Where(item => item.IsPublished && item.Id == id)
+            .Include(item => item.Topic)
+                .ThenInclude(topic => topic.Chapter)
+            .FirstOrDefaultAsync();
+
+        if (lesson == null)
+        {
+            return NotFound();
+        }
+
+        return View("PracticeLesson", new PracticeViewModel
+        {
+            Lesson = lesson,
+            Questions = new[]
+            {
+                new PracticeQuestionViewModel
+                {
+                    Prompt = $"Which idea is the focus of '{lesson.Title}'?",
+                    Options = new[] { lesson.Topic.Title, "A completely unrelated topic", "A random challenge", "None of these" },
+                    CorrectOption = 0,
+                    Explanation = "The lesson topic is the best starting point for understanding this concept."
+                },
+                new PracticeQuestionViewModel
+                {
+                    Prompt = "Should you be able to explain the main idea in your own words after this lesson?",
+                    Options = new[] { "Yes, understanding matters", "No, memorising is enough" },
+                    CorrectOption = 0,
+                    Explanation = "Explaining an idea in your own words is a useful sign that the concept is becoming yours."
+                }
+            }
+        });
+    }
+
     private async Task<LessonProgress?> FindProgressAsync(int lessonId)
     {
         if (!User.Identity?.IsAuthenticated ?? true)

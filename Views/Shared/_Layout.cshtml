@@ -27,6 +27,8 @@
                 @if (User.Identity?.IsAuthenticated == true)
                 {
                     <a asp-controller="WatchHistory" asp-action="Index">My Learning</a>
+                    <a asp-controller="Favorites" asp-action="MyFavorites">Saved</a>
+                    <a asp-controller="Subscription" asp-action="Index">Subscription</a>
                     <a asp-controller="Profile" asp-action="Index">Me</a>
                     <form asp-controller="Account" asp-action="Logout" method="post">
                         <button class="nav-action" type="submit">Log out</button>

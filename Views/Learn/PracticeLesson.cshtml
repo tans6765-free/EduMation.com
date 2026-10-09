@@ -1,0 +1,39 @@
+@model EduMation.ViewModel.PracticeViewModel
+@{
+    ViewData["Title"] = "AI Practice - " + Model.Lesson.Title;
+}
+
+<section class="practice-hero">
+    <div>
+        <p class="eyebrow">AI Practice Moment</p>
+        <h1>Let's see what you understood.</h1>
+        <p class="hero-copy">A short check for <strong>@Model.Lesson.Title</strong>. Answer one question at a time and learn from every result.</p>
+    </div>
+    <span class="practice-counter" data-practice-counter>Question 1 of @Model.Questions.Count</span>
+</section>
+
+<section class="question-stage" data-practice data-question-count="@Model.Questions.Count">
+    @for (var index = 0; index < Model.Questions.Count; index++)
+    {
+        var question = Model.Questions[index];
+        <article class="question-card @(index == 0 ? "is-active" : "")" data-question data-correct="@question.CorrectOption" data-explanation="@question.Explanation">
+            <p class="eyebrow">Question @(index + 1)</p>
+            <h2>@question.Prompt</h2>
+            <div class="answer-options">
+                @for (var optionIndex = 0; optionIndex < question.Options.Length; optionIndex++)
+                {
+                    <button type="button" class="answer-option" data-answer="@optionIndex">@question.Options[optionIndex]</button>
+                }
+            </div>
+            <div class="answer-feedback" data-feedback hidden></div>
+            <button class="button button-primary question-next" type="button" data-next hidden>Next question</button>
+        </article>
+    }
+    <article class="practice-result" data-practice-result hidden>
+        <div class="mastery-burst" aria-hidden="true">&#10024;</div>
+        <p class="eyebrow">Mastery check complete</p>
+        <h2>You scored <strong data-score>0</strong>/@Model.Questions.Count</h2>
+        <p data-result-message>Every answer helps build your understanding.</p>
+        <a class="button button-primary" asp-controller="Learn" asp-action="Lesson" asp-route-id="@Model.Lesson.Id">Review lesson</a>
+    </article>
+</section>
