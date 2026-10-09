@@ -1,9 +1,11 @@
 using EduMation.Data;
 using EduMation.Models;
+using EduMation.Services;
 using EduMation.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace EduMation.Controllers;
 
@@ -13,11 +15,13 @@ public class CurriculumController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _environment;
+    private readonly NctbContentOptions _options;
 
-    public CurriculumController(ApplicationDbContext context, IWebHostEnvironment environment)
+    public CurriculumController(ApplicationDbContext context, IWebHostEnvironment environment, IOptions<NctbContentOptions> options)
     {
         _context = context;
         _environment = environment;
+        _options = options.Value;
     }
 
     [HttpGet("")]
@@ -72,5 +76,7 @@ public class CurriculumController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private string GetSourceRoot() => Path.Combine(_environment.ContentRootPath, "Content", "NCTB");
+    private string GetSourceRoot() => Path.IsPathRooted(_options.RootPath)
+        ? _options.RootPath
+        : Path.Combine(_environment.ContentRootPath, _options.RootPath);
 }

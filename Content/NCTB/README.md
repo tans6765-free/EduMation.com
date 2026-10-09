@@ -1,6 +1,8 @@
 # NCTB source books
 
-Paste the supplied books under this folder using this structure:
+The default source folder is this folder. If drive B does not have enough space, set `Nctb:RootPath` to a folder on another drive instead, such as `D:\EduMation-NCTB`.
+
+Paste the supplied books under the configured folder using this structure:
 
 ```text
 Content/NCTB/
