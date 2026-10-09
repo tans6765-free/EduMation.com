@@ -16,12 +16,14 @@ public class CurriculumController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _environment;
     private readonly NctbContentOptions _options;
+    private readonly NctbPdfExtractionService _extractor;
 
-    public CurriculumController(ApplicationDbContext context, IWebHostEnvironment environment, IOptions<NctbContentOptions> options)
+    public CurriculumController(ApplicationDbContext context, IWebHostEnvironment environment, IOptions<NctbContentOptions> options, NctbPdfExtractionService extractor)
     {
         _context = context;
         _environment = environment;
         _options = options.Value;
+        _extractor = extractor;
     }
 
     [HttpGet("")]
@@ -56,19 +58,25 @@ public class CurriculumController : Controller
         foreach (var path in Directory.EnumerateFiles(root, "*.pdf", SearchOption.AllDirectories))
         {
             var relativePath = Path.GetRelativePath(_environment.ContentRootPath, path).Replace('\\', '/');
-            if (await _context.SourceBooks.AnyAsync(book => book.RelativePath == relativePath)) continue;
+            var existing = await _context.SourceBooks.FirstOrDefaultAsync(book => book.RelativePath == relativePath);
+            if (existing != null && existing.ExtractionStatus == "EXTRACTED") continue;
 
             var parts = relativePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             var classLevel = parts.Length > 2 ? parts[^3] : "Needs review";
             var language = parts.Length > 1 ? parts[^2] : "Needs review";
-            _context.SourceBooks.Add(new SourceBook
+            var extraction = _extractor.Extract(path);
+            var sourceBook = existing ?? new SourceBook
             {
                 OriginalFileName = Path.GetFileName(path),
                 RelativePath = relativePath,
                 ClassLevel = classLevel,
                 LanguageVersion = language,
                 VerificationStatus = "NEEDS_REVIEW"
-            });
+            };
+            sourceBook.PageCount = extraction.PageCount;
+            sourceBook.ExtractedText = extraction.Text;
+            sourceBook.ExtractionStatus = extraction.Status;
+            if (existing == null) _context.SourceBooks.Add(sourceBook);
         }
 
         await _context.SaveChangesAsync();

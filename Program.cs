@@ -28,6 +28,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
 builder.Services.AddHttpClient<IAiLearningService, GeminiLearningService>();
 builder.Services.Configure<NctbContentOptions>(builder.Configuration.GetSection("Nctb"));
+builder.Services.AddSingleton<NctbPdfExtractionService>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -96,6 +97,9 @@ using (var scope = app.Services.CreateScope())
                 );
                 CREATE UNIQUE INDEX [IX_SourceBooks_RelativePath] ON [SourceBooks] ([RelativePath]);
             END
+            IF COL_LENGTH(N'[SourceBooks]', N'PageCount') IS NULL ALTER TABLE [SourceBooks] ADD [PageCount] int NOT NULL CONSTRAINT [DF_SourceBooks_PageCount] DEFAULT 0;
+            IF COL_LENGTH(N'[SourceBooks]', N'ExtractedText') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractedText] nvarchar(max) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractedText] DEFAULT N'';
+            IF COL_LENGTH(N'[SourceBooks]', N'ExtractionStatus') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractionStatus] nvarchar(40) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractionStatus] DEFAULT N'NOT_EXTRACTED';
             """);
         logger.LogInformation("Database migrations applied successfully.");
     }

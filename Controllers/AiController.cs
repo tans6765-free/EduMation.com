@@ -40,8 +40,27 @@ public class AiController : Controller
                 .FirstOrDefaultAsync(item => item.Id == request.LessonId.Value, cancellationToken)
             : null;
 
-        var answer = await _aiLearningService.AskTutorAsync(request.Question, lesson, cancellationToken);
+        var keyword = request.Question.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(word => word.Length >= 5 && word.All(char.IsLetter));
+        var source = keyword == null
+            ? null
+            : await _context.SourceBooks.AsNoTracking()
+                .Where(book => book.ExtractionStatus == "EXTRACTED" && book.ExtractedText.Contains(keyword))
+                .Select(book => new { book.OriginalFileName, book.ClassLevel, book.LanguageVersion, book.ExtractedText })
+                .FirstOrDefaultAsync(cancellationToken);
+        var sourceContext = source == null
+            ? null
+            : $"Book: {source.OriginalFileName}; Class: {source.ClassLevel}; Language: {source.LanguageVersion}; Text excerpt: {TrimExcerpt(source.ExtractedText, keyword!)}";
+
+        var answer = await _aiLearningService.AskTutorAsync(request.Question, lesson, sourceContext, cancellationToken);
         return Json(new { message = answer });
+    }
+
+    private static string TrimExcerpt(string text, string keyword)
+    {
+        var position = text.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
+        var start = Math.Max(0, position - 3500);
+        return text.Substring(start, Math.Min(7000, text.Length - start));
     }
 }
 

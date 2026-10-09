@@ -55,7 +55,7 @@ public class OpenAiLearningService : IAiLearningService
         }
     }
 
-    public async Task<string> AskTutorAsync(string question, Lesson? lesson = null, CancellationToken cancellationToken = default)
+    public async Task<string> AskTutorAsync(string question, Lesson? lesson = null, string? sourceContext = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -68,6 +68,9 @@ public class OpenAiLearningService : IAiLearningService
             Use simple, age-appropriate language. If the question is outside the lesson context, say so and ask for the relevant lesson.
             Lesson context:
             {context}
+
+            Retrieved NCTB source context:
+            {sourceContext ?? "No matching source was found."}
 
             Student question:
             {question}

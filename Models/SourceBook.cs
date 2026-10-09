@@ -29,4 +29,7 @@ public class SourceBook
 
     public DateTime ImportedAtUtc { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
+    public int PageCount { get; set; }
+    public string ExtractedText { get; set; } = string.Empty;
+    public string ExtractionStatus { get; set; } = "NOT_EXTRACTED";
 }

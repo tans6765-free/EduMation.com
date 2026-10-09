@@ -42,7 +42,7 @@ public class GeminiLearningService : IAiLearningService
         }
     }
 
-    public async Task<string> AskTutorAsync(string question, Lesson? lesson = null, CancellationToken cancellationToken = default)
+    public async Task<string> AskTutorAsync(string question, Lesson? lesson = null, string? sourceContext = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(_options.ApiKey))
         {
@@ -50,7 +50,7 @@ public class GeminiLearningService : IAiLearningService
         }
 
         var context = lesson == null ? "No lesson context was selected." : BuildLessonContext(lesson);
-        var prompt = $"You are EduMation Gemini Tutor. Teach instead of simply giving away homework answers. Use age-appropriate language and answer in the student's language. Do not invent NCTB facts. Lesson context: {context}. Student question: {question}";
+        var prompt = $"You are EduMation Gemini Tutor. Teach instead of simply giving away homework answers. Use age-appropriate language and answer in the student's language. Do not invent NCTB facts. Cite only the supplied source context when making NCTB-specific claims. Lesson context: {context}. Retrieved NCTB source context: {sourceContext ?? "No matching source was found."}. Student question: {question}";
         return await GenerateTextAsync(prompt, cancellationToken) ?? "Gemini is unavailable right now. Please try again.";
     }
 
