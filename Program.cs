@@ -156,6 +156,63 @@ using (var scope = app.Services.CreateScope())
             await context.SaveChangesAsync();
             logger.LogInformation("Sample videos seeded.");
         }
+
+        if (!context.LearningClasses.Any())
+        {
+            var classFive = new LearningClass
+            {
+                Name = "Class 5",
+                Slug = "class-5",
+                DisplayOrder = 5
+            };
+            var mathematics = new Subject
+            {
+                Name = "Mathematics",
+                Slug = "mathematics",
+                DisplayOrder = 1,
+                LearningClass = classFive
+            };
+            var fractions = new Chapter
+            {
+                Title = "Fractions",
+                DisplayOrder = 1,
+                Subject = mathematics
+            };
+            var equivalentFractions = new Topic
+            {
+                Title = "Equivalent Fractions",
+                Slug = "equivalent-fractions",
+                DisplayOrder = 1,
+                Chapter = fractions
+            };
+            var sampleVideo = await context.Videos.OrderBy(video => video.Id).FirstOrDefaultAsync();
+            var lesson = new Lesson
+            {
+                Title = "Understanding Equivalent Fractions",
+                Slug = "understanding-equivalent-fractions",
+                Description = "Build a clear mental model for comparing and creating equivalent fractions.",
+                LearningObjectives = "Recognize equivalent fractions; Compare fractions with the same value; Prepare for deeper practice",
+                DurationMinutes = 12,
+                DisplayOrder = 1,
+                Topic = equivalentFractions,
+                Video = sampleVideo
+            };
+
+            context.LearningClasses.Add(classFive);
+            context.Lessons.Add(lesson);
+            await context.SaveChangesAsync();
+
+            context.ProtijogMappings.Add(new ProtijogMapping
+            {
+                LessonId = lesson.Id,
+                PracticeType = "Topic",
+                Title = "Practice this topic on Protijog",
+                ExternalPath = "/protijog-coming-soon",
+                IsActive = true
+            });
+            await context.SaveChangesAsync();
+            logger.LogInformation("Starter curriculum and Protijog placeholder seeded.");
+        }
     }
     catch (Exception ex)
     {

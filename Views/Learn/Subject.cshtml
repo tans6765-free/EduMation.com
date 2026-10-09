@@ -1,0 +1,43 @@
+@model EduMation.ViewModel.SubjectLearningViewModel
+@{
+    ViewData["Title"] = Model.Subject.Name;
+}
+
+<section class="page-hero compact-hero">
+    <div>
+        <p class="eyebrow"><a asp-action="Class" asp-route-classSlug="@Model.Subject.LearningClass.Slug">@Model.Subject.LearningClass.Name</a> / Subject</p>
+        <h1>@Model.Subject.Name</h1>
+        <p class="hero-copy">Work through each chapter, then practice what you understand.</p>
+    </div>
+    <a class="button button-outline" asp-action="Practice">Practice gateway</a>
+</section>
+
+<section class="content-section chapter-list">
+    @foreach (var chapter in Model.Chapters)
+    {
+        <article class="chapter-block">
+            <div class="chapter-heading">
+                <div>
+                    <span class="eyebrow">Chapter @chapter.DisplayOrder.ToString("00")</span>
+                    <h2>@chapter.Title</h2>
+                </div>
+                <span class="section-note">@chapter.Topics.Count topic(s)</span>
+            </div>
+            @foreach (var topic in chapter.Topics.OrderBy(item => item.DisplayOrder))
+            {
+                <div class="topic-row">
+                    <div>
+                        <strong>@topic.Title</strong>
+                        <span>@topic.Lessons.Count lesson(s)</span>
+                    </div>
+                    <div class="topic-lessons">
+                        @foreach (var lesson in topic.Lessons.OrderBy(item => item.DisplayOrder))
+                        {
+                            <a class="lesson-link" asp-action="Lesson" asp-route-id="@lesson.Id">@lesson.Title <span>&rarr;</span></a>
+                        }
+                    </div>
+                </div>
+            }
+        </article>
+    }
+</section>

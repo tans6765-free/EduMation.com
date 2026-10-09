@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EduMation.Data;
 using EduMation.Models;
+using EduMation.ViewModel;
 using System.Diagnostics;
 
 namespace EduMation.Controllers
@@ -19,64 +20,21 @@ namespace EduMation.Controllers
 
         public async Task<IActionResult> Index()
         {
-            // Fetch the latest uploaded video as the featured video
-            var featuredVideo = await _context.Videos
-                .OrderByDescending(v => v.UploadDate)
-                .FirstOrDefaultAsync();
-
-            // Fetch all videos for the video list (excluding the featured video)
-            var videos = await _context.Videos
-                .Where(v => featuredVideo == null || v.Id != featuredVideo.Id)
-                .ToListAsync();
-
-            // Determine the most watched genre for the current user (if logged in)
-            string mostWatchedGenre = null;
-            if (User.Identity.IsAuthenticated)
+            var viewModel = new HomeLandingViewModel
             {
-                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var watchHistory = await _context.WatchHistories
-                        .Where(wh => wh.UserId == userId)
-                        .Include(wh => wh.Video)
-                        .ToListAsync();
-
-                    if (watchHistory.Any())
-                    {
-                        mostWatchedGenre = watchHistory
-                            .GroupBy(wh => wh.Video.Genre)
-                            .OrderByDescending(g => g.Count())
-                            .Select(g => g.Key)
-                            .FirstOrDefault();
-                    }
-                }
-            }
-
-            // Fetch recommended videos based on the most watched genre (excluding the featured video)
-            List<Video> recommendedVideos = new List<Video>();
-            if (!string.IsNullOrEmpty(mostWatchedGenre))
-            {
-                recommendedVideos = await _context.Videos
-                    .Where(v => v.Genre == mostWatchedGenre && (featuredVideo == null || v.Id != featuredVideo.Id))
-                    .Take(3) // Limit to 3 recommended videos
-                    .ToListAsync();
-            }
-            else
-            {
-                // If no watch history or user not logged in, recommend the most recent videos
-                recommendedVideos = await _context.Videos
-                    .Where(v => featuredVideo == null || v.Id != featuredVideo.Id)
-                    .OrderByDescending(v => v.UploadDate)
+                Classes = await _context.LearningClasses
+                    .Where(learningClass => learningClass.IsPublished)
+                    .Include(learningClass => learningClass.Subjects)
+                    .OrderBy(learningClass => learningClass.DisplayOrder)
+                    .Take(6)
+                    .ToListAsync(),
+                FeaturedLessons = await _context.Lessons
+                    .Where(lesson => lesson.IsPublished)
+                    .Include(lesson => lesson.Topic)
+                        .ThenInclude(topic => topic.Chapter)
+                    .OrderBy(lesson => lesson.DisplayOrder)
                     .Take(3)
-                    .ToListAsync();
-            }
-
-            // Create a view model to pass all data to the view
-            var viewModel = new HomeViewModel
-            {
-                FeaturedVideo = featuredVideo,
-                RecommendedVideos = recommendedVideos,
-                Videos = videos
+                    .ToListAsync()
             };
 
             return View(viewModel);

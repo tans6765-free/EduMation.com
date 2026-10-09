@@ -1,0 +1,63 @@
+@model EduMation.ViewModel.LessonDetailsViewModel
+@{
+    ViewData["Title"] = Model.Lesson.Title;
+    var topic = Model.Lesson.Topic;
+    var chapter = topic.Chapter;
+    var subject = chapter.Subject;
+    var learningClass = subject.LearningClass;
+}
+
+<section class="lesson-header">
+    <p class="eyebrow"><a asp-action="Subject" asp-route-classSlug="@learningClass.Slug" asp-route-subjectSlug="@subject.Slug">@learningClass.Name / @subject.Name</a> / @chapter.Title</p>
+    <h1>@Model.Lesson.Title</h1>
+    <p>@Model.Lesson.Description</p>
+</section>
+
+<div class="lesson-layout">
+    <main>
+        @if (Model.Lesson.Video != null && !string.IsNullOrWhiteSpace(Model.Lesson.Video.VideoUrl))
+        {
+            <div class="lesson-player">
+                <video controls preload="metadata" poster="@Model.Lesson.Video.ThumbnailUrl">
+                    <source src="@Model.Lesson.Video.VideoUrl" />
+                </video>
+            </div>
+        }
+        else
+        {
+            <div class="lesson-placeholder"><span>Lesson animation / video</span><strong>Media will appear here.</strong></div>
+        }
+        <div class="lesson-body">
+            <div>
+                <p class="eyebrow">What you will learn</p>
+                <ul class="objective-list">
+                    @foreach (var objective in Model.Lesson.LearningObjectives.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <li>@objective.Trim()</li>
+                    }
+                </ul>
+            </div>
+            <div class="progress-panel">
+                <span>Your progress</span>
+                <strong>@Model.ProgressPercent%</strong>
+                <div class="progress-track"><span style="width: @Model.ProgressPercent%"></span></div>
+            </div>
+        </div>
+    </main>
+    <aside class="lesson-sidebar">
+        <h2>Ready to practice?</h2>
+        <p>Use a quick EduMation check now, or continue to the future Protijog practice space.</p>
+        <a class="button button-primary button-full" asp-action="Practice">Quick practice</a>
+        @if (Model.Lesson.ProtijogMapping is { IsActive: true } mapping)
+        {
+            <a class="button button-outline button-full" href="@mapping.ExternalPath">@mapping.Title</a>
+        }
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <form asp-action="CompleteLesson" asp-route-id="@Model.Lesson.Id" method="post">
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                <button class="button button-dark button-full" type="submit">@(Model.IsCompleted ? "Completed" : "Mark complete")</button>
+            </form>
+        }
+    </aside>
+</div>

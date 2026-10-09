@@ -1,0 +1,57 @@
+@model EduMation.ViewModel.LearnIndexViewModel
+@{
+    ViewData["Title"] = "Learn";
+}
+
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">Your learning hub</p>
+        <h1>Learn with a clear path.</h1>
+        <p class="hero-copy">Move from class to subject to lesson, then check your understanding with practice and assessment.</p>
+    </div>
+    <a class="button button-primary" asp-controller="Learn" asp-action="Practice">Open practice</a>
+</section>
+
+<section class="content-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Curriculum</p>
+            <h2>Choose your class</h2>
+        </div>
+        <span class="section-note">Classes 1–12</span>
+    </div>
+    <div class="class-grid">
+        @foreach (var learningClass in Model.Classes)
+        {
+            <a class="class-tile" asp-action="Class" asp-route-classSlug="@learningClass.Slug">
+                <span class="class-number">@learningClass.Name.Replace("Class ", "")</span>
+                <span class="class-name">@learningClass.Name</span>
+                <span class="class-meta">@learningClass.Subjects.Count subject(s)</span>
+                <span class="tile-arrow">Explore &rarr;</span>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Start here</p>
+            <h2>Featured lessons</h2>
+        </div>
+    </div>
+    <div class="lesson-grid">
+        @foreach (var lesson in Model.FeaturedLessons)
+        {
+            <article class="lesson-card">
+                <div class="lesson-card-top">
+                    <span class="lesson-chip">@lesson.Topic.Chapter.Title</span>
+                    <span>@lesson.DurationMinutes min</span>
+                </div>
+                <h3>@lesson.Title</h3>
+                <p>@lesson.Description</p>
+                <a class="text-link" asp-action="Lesson" asp-route-id="@lesson.Id">Open lesson &rarr;</a>
+            </article>
+        }
+    </div>
+</section>
