@@ -167,6 +167,12 @@ em { color: var(--violet); font-style: normal; }
 .chat-form { display: flex; gap: 8px; }
 .chat-form input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); flex: 1; padding: 13px; }
 .chat-form input:focus { border-color: var(--violet); box-shadow: 0 3px 0 var(--violet); outline: 0; }
+.import-list { background: var(--white); border: 1px solid var(--line); }
+.import-row { align-items: center; border-bottom: 1px solid var(--line); display: flex; gap: 18px; justify-content: space-between; padding: 16px 20px; }
+.import-row:last-child { border-bottom: 0; }
+.import-row strong, .import-row span { display: block; }
+.import-row span { color: var(--muted); font-size: .78rem; margin-top: 4px; }
+.status-pill { background: #fff0e8; color: #9d422d !important; margin-top: 0 !important; padding: 6px 9px; }
 
 @media (max-width: 850px) {
     .site-nav { gap: 1rem; }

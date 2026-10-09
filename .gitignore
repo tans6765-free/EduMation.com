@@ -12,3 +12,6 @@ obj/
 *.suo
 
 *.vsidx
+
+# Private NCTB source books; store locally or in private object storage
+Content/NCTBBooks/**/*.pdf

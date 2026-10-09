@@ -1,0 +1,5 @@
+# NCTB source books can be large and should not be committed to GitHub.
+*.pdf
+*.PDF
+*.zip
+*.rar

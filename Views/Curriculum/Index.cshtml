@@ -1,0 +1,39 @@
+@model EduMation.ViewModel.CurriculumImportViewModel
+@{
+    ViewData["Title"] = "Curriculum Import";
+}
+
+<section class="page-hero compact-hero">
+    <div>
+        <p class="eyebrow">Admin content management</p>
+        <h1>NCTB curriculum importer.</h1>
+        <p class="hero-copy">Scan the local source-book folder, review metadata, then verify chapters and topics against the official PDF before publishing AI content.</p>
+    </div>
+    <form asp-action="Scan" method="post">
+        <button class="button button-primary" type="submit">Scan source folder</button>
+    </form>
+</section>
+
+<section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Discovered files</p><h2>@Model.DiscoveredFiles.Count PDF(s)</h2></div></div>
+    <div class="import-list">
+        @foreach (var file in Model.DiscoveredFiles)
+        {
+            <div class="import-row"><strong>@file</strong><span>Ready for metadata review</span></div>
+        }
+        @if (!Model.DiscoveredFiles.Any())
+        {
+            <div class="empty-state"><h2>Paste the NCTB books into Content/NCTB.</h2><p>The scanner will find PDFs under each Class and language folder.</p></div>
+        }
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Registered source books</p><h2>@Model.RegisteredBooks.Count book(s)</h2></div></div>
+    <div class="import-list">
+        @foreach (var book in Model.RegisteredBooks)
+        {
+            <div class="import-row"><div><strong>@book.OriginalFileName</strong><span>@book.ClassLevel / @book.LanguageVersion</span></div><span class="status-pill">@book.VerificationStatus</span></div>
+        }
+    </div>
+</section>

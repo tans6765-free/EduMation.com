@@ -25,8 +25,8 @@ builder.Services.Configure<FormOptions>(options =>
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
-builder.Services.AddHttpClient<IAiLearningService, OpenAiLearningService>();
+builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
+builder.Services.AddHttpClient<IAiLearningService, GeminiLearningService>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -77,6 +77,25 @@ using (var scope = app.Services.CreateScope())
     {
         // Ensure database is created and migrations are applied
         await context.Database.MigrateAsync();
+        await context.Database.ExecuteSqlRawAsync("""
+            IF OBJECT_ID(N'[SourceBooks]') IS NULL
+            BEGIN
+                CREATE TABLE [SourceBooks] (
+                    [Id] int NOT NULL IDENTITY,
+                    [OriginalFileName] nvarchar(260) NOT NULL,
+                    [RelativePath] nvarchar(180) NOT NULL,
+                    [ClassLevel] nvarchar(80) NOT NULL,
+                    [LanguageVersion] nvarchar(80) NOT NULL,
+                    [Subject] nvarchar(160) NOT NULL,
+                    [AcademicYear] nvarchar(40) NOT NULL,
+                    [VerificationStatus] nvarchar(60) NOT NULL,
+                    [ImportedAtUtc] datetime2 NOT NULL,
+                    [IsActive] bit NOT NULL,
+                    CONSTRAINT [PK_SourceBooks] PRIMARY KEY ([Id])
+                );
+                CREATE UNIQUE INDEX [IX_SourceBooks_RelativePath] ON [SourceBooks] ([RelativePath]);
+            END
+            """);
         logger.LogInformation("Database migrations applied successfully.");
     }
     catch (Exception ex)

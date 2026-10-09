@@ -23,6 +23,7 @@ namespace EduMation.Data
         public DbSet<Lesson> Lessons { get; set; }
         public DbSet<ProtijogMapping> ProtijogMappings { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
+        public DbSet<SourceBook> SourceBooks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
