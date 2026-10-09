@@ -45,6 +45,7 @@ h1, h2, h3, p { margin-top: 0; }
 .brand img { height: 42px; object-fit: contain; width: 110px; }
 .brand span { color: var(--muted); font-size: .72rem; line-height: 1.2; max-width: 100px; }
 .nav-links { align-items: center; display: flex; flex: 1; gap: 1.1rem; }
+.nav-links.collapse { display: flex !important; }
 .nav-links > a, .nav-action { color: var(--muted); font-size: .86rem; }
 .nav-links > a:hover, .nav-action:hover { color: var(--ink); }
 .nav-search { display: flex; margin-left: auto; }
@@ -156,6 +157,7 @@ em { color: var(--violet); font-style: normal; }
 @media (max-width: 850px) {
     .site-nav { gap: 1rem; }
     .nav-toggle { display: block; margin-left: auto; }
+    .nav-links.collapse:not(.show) { display: none !important; }
     .nav-links { align-items: stretch; background: var(--paper); flex-direction: column; gap: 15px; padding: 18px 0; }
     .nav-search { margin-left: 0; }
     .nav-search input { flex: 1; width: auto; }
