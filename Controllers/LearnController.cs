@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using EduMation.Data;
 using EduMation.Models;
+using EduMation.Services;
 using EduMation.ViewModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,23 @@ namespace EduMation.Controllers;
 public class LearnController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IAiLearningService _aiLearningService;
 
-    public LearnController(ApplicationDbContext context)
+    public LearnController(ApplicationDbContext context, IAiLearningService aiLearningService)
     {
         _context = context;
+        _aiLearningService = aiLearningService;
+    }
+
+    [HttpGet("curriculum")]
+    public async Task<IActionResult> Curriculum()
+    {
+        var classes = await _context.LearningClasses
+            .Where(learningClass => learningClass.IsPublished)
+            .Include(learningClass => learningClass.Subjects)
+            .OrderBy(learningClass => learningClass.DisplayOrder)
+            .ToListAsync();
+        return View(classes);
     }
 
     [HttpGet("")]
@@ -153,26 +167,17 @@ public class LearnController : Controller
             return NotFound();
         }
 
+        var topic = await _context.Topics
+            .Include(item => item.Chapter)
+                .ThenInclude(chapter => chapter.Subject)
+                    .ThenInclude(subject => subject.LearningClass)
+            .FirstAsync(item => item.Id == lesson.TopicId);
+        lesson.Topic = topic;
+
         return View("PracticeLesson", new PracticeViewModel
         {
             Lesson = lesson,
-            Questions = new[]
-            {
-                new PracticeQuestionViewModel
-                {
-                    Prompt = $"Which idea is the focus of '{lesson.Title}'?",
-                    Options = new[] { lesson.Topic.Title, "A completely unrelated topic", "A random challenge", "None of these" },
-                    CorrectOption = 0,
-                    Explanation = "The lesson topic is the best starting point for understanding this concept."
-                },
-                new PracticeQuestionViewModel
-                {
-                    Prompt = "Should you be able to explain the main idea in your own words after this lesson?",
-                    Options = new[] { "Yes, understanding matters", "No, memorising is enough" },
-                    CorrectOption = 0,
-                    Explanation = "Explaining an idea in your own words is a useful sign that the concept is becoming yours."
-                }
-            }
+            Questions = await _aiLearningService.GenerateQuestionsAsync(lesson)
         });
     }
 

@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "Ask EduMation AI";
+}
+
+<section class="practice-hero">
+    <div>
+        <p class="eyebrow">Learning AI</p>
+        <h1>Ask EduMation AI.</h1>
+        <p class="hero-copy">Ask for a simpler explanation, an example, or a step-by-step way to understand your lesson.</p>
+    </div>
+</section>
+
+<section class="chat-shell" data-tutor>
+    <div class="chat-messages" data-chat-messages>
+        <div class="chat-message chat-message-ai">Hi. What are you learning today?</div>
+    </div>
+    <div class="chat-suggestions">
+        <button type="button" data-suggestion="Explain this simply">Explain this simply</button>
+        <button type="button" data-suggestion="Give me a real-life example">Give me a real-life example</button>
+        <button type="button" data-suggestion="Help me practice">Help me practice</button>
+    </div>
+    <form class="chat-form" data-chat-form>
+        <input name="question" data-chat-input placeholder="Ask about a lesson or concept" autocomplete="off" />
+        <button class="button button-primary" type="submit">Ask</button>
+    </form>
+</section>
+
+@section Scripts {
+<script>
+(() => {
+    const root = document.querySelector('[data-tutor]');
+    if (!root) return;
+    const messages = root.querySelector('[data-chat-messages]');
+    const input = root.querySelector('[data-chat-input]');
+    const addMessage = (text, role) => {
+        const item = document.createElement('div');
+        item.className = `chat-message chat-message-${role}`;
+        item.textContent = text;
+        messages.append(item);
+        messages.scrollTop = messages.scrollHeight;
+    };
+    const ask = async (question) => {
+        if (!question.trim()) return;
+        addMessage(question, 'student');
+        input.value = '';
+        addMessage('Thinking...', 'ai');
+        const thinking = messages.lastElementChild;
+        try {
+            const response = await fetch('/ai/chat/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, lessonId: null }) });
+            const data = await response.json();
+            thinking.textContent = data.message || 'I could not answer that yet.';
+        } catch {
+            thinking.textContent = 'The tutor is unavailable right now. Please try again.';
+        }
+    };
+    root.querySelector('[data-chat-form]').addEventListener('submit', (event) => { event.preventDefault(); ask(input.value); });
+    root.querySelectorAll('[data-suggestion]').forEach((button) => button.addEventListener('click', () => ask(button.dataset.suggestion)));
+})();
+</script>
+}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using EduMation.Data;
 using EduMation.Models;
+using EduMation.Services;
 using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,9 @@ builder.Services.Configure<FormOptions>(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
+builder.Services.AddHttpClient<IAiLearningService, OpenAiLearningService>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
@@ -212,6 +216,23 @@ using (var scope = app.Services.CreateScope())
             });
             await context.SaveChangesAsync();
             logger.LogInformation("Starter curriculum and Protijog placeholder seeded.");
+        }
+
+        var missingClasses = Enumerable.Range(1, 12)
+            .Where(number => !context.LearningClasses.Any(learningClass => learningClass.Slug == $"class-{number}"))
+            .Select(number => new LearningClass
+            {
+                Name = $"Class {number}",
+                Slug = $"class-{number}",
+                DisplayOrder = number,
+                IsPublished = true
+            })
+            .ToList();
+        if (missingClasses.Count > 0)
+        {
+            context.LearningClasses.AddRange(missingClasses);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Visible curriculum sections ensured for classes 1 through 12.");
         }
     }
     catch (Exception ex)

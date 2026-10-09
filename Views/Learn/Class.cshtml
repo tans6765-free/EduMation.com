@@ -7,8 +7,9 @@
     <div>
         <p class="eyebrow"><a asp-action="Index">Learn</a> / Class</p>
         <h1>@Model.Name</h1>
-        <p class="hero-copy">Choose a subject and continue through its chapters and lessons.</p>
+        <p class="hero-copy">Choose a subject and continue through its chapters, topics, lessons, and AI practice.</p>
     </div>
+    <a class="button button-outline" asp-controller="Ai" asp-action="Chat">Ask EduMation AI</a>
 </section>
 
 <section class="content-section">
@@ -23,4 +24,12 @@
             </a>
         }
     </div>
+    @if (!Model.Subjects.Any())
+    {
+        <div class="empty-state">
+            <p class="eyebrow">Curriculum import ready</p>
+            <h2>This class is ready for its NCTB subjects.</h2>
+            <p>When you provide the official book data, each subject, chapter, topic, lesson, and AI practice path will appear here.</p>
+        </div>
+    }
 </section>

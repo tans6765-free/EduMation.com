@@ -1,0 +1,26 @@
+@model IReadOnlyList<EduMation.Models.LearningClass>
+@{
+    ViewData["Title"] = "Curriculum";
+}
+
+<section class="page-hero">
+    <div>
+        <p class="eyebrow">NCTB learning map</p>
+        <h1>Every class has a path.</h1>
+        <p class="hero-copy">Choose a class to explore subjects, chapters, topics, lessons, and the AI practice that follows each lesson.</p>
+    </div>
+</section>
+
+<section class="content-section">
+    <div class="class-grid curriculum-grid">
+        @foreach (var learningClass in Model)
+        {
+            <a class="class-tile" asp-controller="Learn" asp-action="Class" asp-route-classSlug="@learningClass.Slug">
+                <span class="class-number">@learningClass.Name.Replace("Class ", "")</span>
+                <span class="class-name">@learningClass.Name</span>
+                <span class="class-meta">@learningClass.Subjects.Count subjects ready</span>
+                <span class="tile-arrow">Open class &rarr;</span>
+            </a>
+        }
+    </div>
+</section>

@@ -153,6 +153,20 @@ em { color: var(--violet); font-style: normal; }
 .practice-card h2 { font-size: 2rem; margin-top: 45px; }
 .practice-card p { color: var(--muted); line-height: 1.7; max-width: 500px; }
 .practice-primary { background: var(--mint); }
+.empty-state { background: var(--white); border: 1px dashed var(--line); margin-top: 18px; padding: 38px; }
+.empty-state h2 { font-size: 2rem; }
+.empty-state p:last-child { color: var(--muted); line-height: 1.7; max-width: 650px; }
+.chat-shell { background: var(--white); border: 1px solid var(--line); box-shadow: var(--shadow); margin: 55px auto; max-width: 850px; padding: 22px; }
+.chat-messages { display: flex; flex-direction: column; gap: 12px; min-height: 360px; max-height: 520px; overflow-y: auto; padding: 12px; }
+.chat-message { line-height: 1.6; max-width: 78%; padding: 13px 16px; }
+.chat-message-ai { align-self: flex-start; background: var(--mint); }
+.chat-message-student { align-self: flex-end; background: #ebe8ff; color: var(--violet-dark); }
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.chat-suggestions button { background: var(--paper); border: 1px solid var(--line); border-radius: 999px; color: var(--ink); cursor: pointer; padding: 9px 12px; }
+.chat-suggestions button:hover { border-color: var(--violet); transform: translateY(-2px); }
+.chat-form { display: flex; gap: 8px; }
+.chat-form input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); flex: 1; padding: 13px; }
+.chat-form input:focus { border-color: var(--violet); box-shadow: 0 3px 0 var(--violet); outline: 0; }
 
 @media (max-width: 850px) {
     .site-nav { gap: 1rem; }
