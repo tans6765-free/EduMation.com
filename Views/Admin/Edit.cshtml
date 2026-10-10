@@ -24,6 +24,7 @@
                 <textarea asp-for="Description" class="form-control"></textarea>
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
+            <div class="form-check mb-3"><input asp-for="IsPublished" class="form-check-input" /><label asp-for="IsPublished" class="form-check-label">Published to learners</label></div>
             <div class="form-group">
                 <label for="videoFile" class="control-label">Video File</label>
                 <input type="file" name="videoFile" class="form-control" accept="video/*" />

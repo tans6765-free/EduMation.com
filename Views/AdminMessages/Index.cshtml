@@ -1,0 +1,12 @@
+@model EduMation.ViewModel.AdminMessageViewModel
+@{ ViewData["Title"] = "Message students"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">Admin communications</p><h1>Message students</h1><p class="hero-copy">Send an email and an in-app notification to one student or a whole class.</p></div></section>
+<section class="content-section"><form asp-action="Send" method="post" class="lesson-card profile-form">
+    <div asp-validation-summary="All" class="text-danger"></div>
+    <label for="LearningClassId">Whole class</label><select asp-for="LearningClassId"><option value="">Choose a class (leave blank for one student)</option>@foreach(var item in Model.Classes){<option value="@item.Id">@item.Name</option>}</select>
+    <label for="StudentId">One student</label><select asp-for="StudentId"><option value="">Choose a student (leave blank for a class)</option>@foreach(var item in Model.Students){<option value="@item.Id">@item.DisplayName — @(item.LearningClassId.HasValue ? Model.Classes.FirstOrDefault(c => c.Id == item.LearningClassId)?.Name : "No class")</option>}</select>
+    <label asp-for="Subject">Email subject</label><input asp-for="Subject" maxlength="120" />
+    <label asp-for="Message">Message</label><textarea asp-for="Message" rows="8" maxlength="5000"></textarea>
+    <p class="form-text">Email is sent only to verified student email addresses. Each send is recorded in the admin audit log.</p>
+    <button class="button button-primary" type="submit">Send message</button>
+</form></section>

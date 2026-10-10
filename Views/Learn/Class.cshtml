@@ -19,7 +19,7 @@
             <a class="subject-card" asp-action="Subject" asp-route-classSlug="@Model.Slug" asp-route-subjectSlug="@subject.Slug">
                 <span class="subject-index">@(subject.DisplayOrder.ToString("00"))</span>
                 <h2>@subject.Name</h2>
-                <p>@subject.Chapters.Count chapter(s)</p>
+                <p>@(subject.Chapters.Count > 0 ? $"{subject.Chapters.Count} chapters" : "Chapter titles being verified")</p>
                 <span class="text-link">View subject &rarr;</span>
             </a>
         }

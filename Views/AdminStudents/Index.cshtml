@@ -1,0 +1,16 @@
+@model EduMation.ViewModel.AdminStudentsViewModel
+@{ ViewData["Title"] = "Student management"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">Admin · learners</p><h1>Student management</h1><p class="hero-copy">Filter by class, badges, registration date, and learning progress, then export the matching roster.</p></div><a class="button button-primary" asp-action="ExportCsv" asp-route-LearningClassId="@Model.LearningClassId" asp-route-BadgeCode="@Model.BadgeCode" asp-route-RegisteredFrom="@Model.RegisteredFrom?.ToString("yyyy-MM-dd")" asp-route-RegisteredTo="@Model.RegisteredTo?.ToString("yyyy-MM-dd")" asp-route-MinimumProgress="@Model.MinimumProgress" asp-route-MaximumProgress="@Model.MaximumProgress">Download CSV</a></section>
+<section class="content-section"><form method="get" class="student-filter lesson-card">
+    <label for="LearningClassId">Class</label><select asp-for="LearningClassId"><option value="">All classes</option>@foreach(var c in Model.Classes){<option value="@c.Id">@c.Name</option>}</select>
+    <label for="BadgeCode">Badge earned</label><select asp-for="BadgeCode"><option value="">Any badge</option>@foreach(var b in Model.Badges){<option value="@b.Code">@b.Title</option>}</select>
+    <label asp-for="RegisteredFrom">Registered from</label><input asp-for="RegisteredFrom" type="date" />
+    <label asp-for="RegisteredTo">Registered to</label><input asp-for="RegisteredTo" type="date" />
+    <label asp-for="MinimumProgress">Progress min %</label><input asp-for="MinimumProgress" type="number" min="0" max="100" />
+    <label asp-for="MaximumProgress">Progress max %</label><input asp-for="MaximumProgress" type="number" min="0" max="100" />
+    <button class="button button-primary" type="submit">Apply filters</button><a class="button button-outline" asp-action="Index">Clear</a>
+</form></section>
+<section class="content-section"><p><strong>@Model.Students.Count</strong> matching students</p><div class="student-table-wrap"><table class="student-table"><thead><tr><th>Student</th><th>Class / District</th><th>Registered</th><th>Progress</th><th>Badges</th><th>Contact</th><th>Email</th></tr></thead><tbody>
+@foreach(var student in Model.Students){<tr><td><strong>@student.FullName</strong><br /><small>@student.UserId</small></td><td>@student.ClassName<br /><small>@student.District</small></td><td>@(student.RegisteredAtUtc.Year < 2000 ? "Unknown" : student.RegisteredAtUtc.ToLocalTime().ToString("yyyy-MM-dd"))</td><td>@student.ProgressPercent%</td><td>@string.Join(", ", student.Badges)</td><td>@student.ContactNumber</td><td><a href="mailto:@student.Email">@student.Email</a></td></tr>}
+@if (!Model.Students.Any()){<tr><td colspan="7">No students match these filters.</td></tr>}
+</tbody></table></div></section>

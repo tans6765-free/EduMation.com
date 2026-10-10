@@ -1,9 +1,20 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+    var privateControllers = new[] { "Profile", "Favorites", "WatchHistory", "UserRoles", "Subscription" };
+    var noIndex = User.Identity?.IsAuthenticated == true && privateControllers.Contains(controllerName);
+}
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduMation</title>
+    <meta name="description" content="@(ViewData["MetaDescription"] ?? "Learn the NCTB curriculum through focused lessons, practice, and progress you can see.")" />
+    @if (noIndex) { <meta name="robots" content="noindex, nofollow" /> }
+    else { <meta property="og:title" content="@ViewData["Title"] - EduMation" /><meta property="og:description" content="@(ViewData["MetaDescription"] ?? "Learn the NCTB curriculum through focused lessons, practice, and progress you can see.")" /> }
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
@@ -17,31 +28,50 @@
             <button class="nav-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Toggle navigation">Menu</button>
             <div class="collapse nav-links" id="mainNav">
                 <a asp-controller="Home" asp-action="Index">Home</a>
-                <a asp-controller="Learn" asp-action="Index">Learn</a>
-                <a asp-controller="Learn" asp-action="Curriculum">Curriculum</a>
-                <a asp-controller="Learn" asp-action="Practice">Practice</a>
-                <a asp-controller="Ai" asp-action="Chat">Ask AI</a>
-                <a asp-controller="Videos" asp-action="Index">Explore</a>
+                <details class="nav-dropdown"><summary>Learning <span aria-hidden="true">⌄</span></summary><div class="nav-submenu">
+                    <a asp-controller="Learn" asp-action="Index">Learn</a><a asp-controller="Learn" asp-action="Curriculum">Curriculum</a><a asp-controller="Books" asp-action="Index">NCTB Books</a><a asp-controller="Learn" asp-action="Practice">AI Practice Questions</a>
+                </div></details>
+                <details class="nav-dropdown"><summary>Explore <span aria-hidden="true">⌄</span></summary><div class="nav-submenu">
+                    <a asp-controller="Ai" asp-action="Chat">Ask AI</a><a asp-controller="Videos" asp-action="Index">Video lessons</a>
+                </div></details>
                 <form class="nav-search" asp-controller="Search" asp-action="Index" method="get">
                     <input type="search" name="query" placeholder="Search lessons" aria-label="Search lessons" />
                     <button type="submit" aria-label="Search">Go</button>
                 </form>
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <a asp-controller="WatchHistory" asp-action="Index">My Learning</a>
-                    <a asp-controller="Learn" asp-action="Progress">Progress</a>
-                    <a asp-controller="Favorites" asp-action="MyFavorites">Saved</a>
-                    <a asp-controller="Subscription" asp-action="Index">Subscription</a>
-                    <a asp-controller="Profile" asp-action="Index">Me</a>
-                    <form asp-controller="Account" asp-action="Logout" method="post">
-                        <button class="nav-action" type="submit">Log out</button>
-                    </form>
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-controller="Admin" asp-action="Index">Admin</a>
-                        <a asp-controller="Curriculum" asp-action="Index">NCTB Import</a>
-                        <a asp-controller="UserRoles" asp-action="Index">User Roles</a>
-                    }
+                    <div class="nav-user-actions">
+                        @await Component.InvokeAsync("Notifications")
+                        <details class="nav-dropdown profile-dropdown">
+                            <summary>Profile <span aria-hidden="true">⌄</span></summary>
+                            <div class="nav-submenu profile-submenu">
+                                <a asp-controller="Profile" asp-action="Index">My profile</a>
+                                <a asp-controller="WatchHistory" asp-action="Index">Watch history</a>
+                                <a asp-controller="Favorites" asp-action="MyFavorites">Favorites</a>
+                                <a asp-controller="Learn" asp-action="Progress">Progress</a>
+                                <a asp-controller="Learn" asp-action="Progress" asp-fragment="achievements">Badges</a>
+                                <a asp-controller="Calendar" asp-action="Index">Calendar</a>
+                                <a asp-controller="Subscription" asp-action="Index">Subscription</a>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <span class="nav-submenu-label">Admin tools</span>
+                                    <a asp-controller="Admin" asp-action="Index">Dashboard</a>
+                                    <a asp-controller="AdminStudents" asp-action="Index">Students &amp; export</a>
+                                    <a asp-controller="AdminMessages" asp-action="Index">Message students</a>
+                                    <a asp-controller="AdminWelcomeEmail" asp-action="Index">Welcome email template</a>
+                                    <a asp-controller="Books" asp-action="Index">Book library</a>
+                                    <a asp-controller="AdminCurriculum" asp-action="Index">Curriculum CMS</a>
+                                    <a asp-controller="AdminQuestions" asp-action="Index">Question review</a>
+                                    <a asp-controller="Curriculum" asp-action="Index">NCTB PDF import</a>
+                                    <a asp-controller="AdminPages" asp-action="Index">Public pages</a>
+                                    <a asp-controller="UserRoles" asp-action="Index">User roles</a>
+                                }
+                            </div>
+                        </details>
+                        <form class="nav-logout" asp-controller="Account" asp-action="Logout" method="post">
+                            <button class="nav-action" type="submit">Log out</button>
+                        </form>
+                    </div>
                 }
                 else
                 {
@@ -53,6 +83,10 @@
     </header>
     <div class="site-shell">
         <main role="main" class="pb-3">
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger" role="alert">@TempData["ErrorMessage"]</div>
+            }
             @if (TempData["Message"] != null)
             {
                 <div class="alert alert-success">@TempData["Message"]</div>
@@ -61,10 +95,19 @@
         </main>
     </div>
 
+    <nav class="mobile-nav" aria-label="Mobile learning navigation">
+        <a asp-controller="Home" asp-action="Index">Home</a>
+        <a asp-controller="Learn" asp-action="Index">Learn</a>
+        <a asp-controller="Books" asp-action="Index">Books</a>
+        <a asp-controller="Learn" asp-action="Practice">Practice</a>
+        @if (User.Identity?.IsAuthenticated != true) { <a asp-controller="Account" asp-action="Login">Log in</a> }
+    </nav>
+
     <footer class="site-footer">
         <div class="site-footer-inner">
             <strong>EduMation</strong>
-            <span>Learn it here. Practice it on Protijog.</span>
+            <span>Learn, practice, and grow at your pace.</span>
+            <span><a asp-controller="Home" asp-action="About">About</a> · <a asp-controller="Home" asp-action="HowItWorks">How it works</a> · <a asp-controller="Home" asp-action="Contact">Contact</a> · <a asp-controller="Home" asp-action="Privacy">Privacy</a></span>
             <span>&copy; @DateTime.Now.Year EduMation</span>
         </div>
     </footer>

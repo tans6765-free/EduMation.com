@@ -1,10 +1,9 @@
 using EduMation.Data;
 using EduMation.Models;
 using EduMation.Services;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 
 namespace EduMation.Controllers;
 
@@ -13,23 +12,27 @@ public class AiController : Controller
 {
     private readonly IAiLearningService _aiLearningService;
     private readonly ApplicationDbContext _context;
+    private readonly IAiUsageRecorder _usage;
 
-    public AiController(IAiLearningService aiLearningService, ApplicationDbContext context)
+    public AiController(IAiLearningService aiLearningService, ApplicationDbContext context, IAiUsageRecorder usage)
     {
         _aiLearningService = aiLearningService;
         _context = context;
+        _usage = usage;
     }
 
     [HttpGet("chat")]
-    public IActionResult Chat()
+    public async Task<IActionResult> Chat(int? lessonId, CancellationToken cancellationToken)
     {
+        if (lessonId.HasValue && !await _context.Lessons.AnyAsync(item => item.Id == lessonId && item.IsPublished && item.Topic.IsPublished && item.Topic.Chapter.IsPublished && item.Topic.Chapter.Subject.IsPublished && item.Topic.Chapter.Subject.LearningClass.IsPublished, cancellationToken)) return NotFound();
+        ViewBag.LessonId = lessonId;
         return View();
     }
 
     [HttpPost("chat/message")]
     public async Task<IActionResult> Message([FromBody] TutorRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Question))
+        if (string.IsNullOrWhiteSpace(request.Question) || request.Question.Length > 2000)
         {
             return BadRequest(new { message = "Ask a question about what you are learning." });
         }
@@ -40,42 +43,26 @@ public class AiController : Controller
                     .ThenInclude(topic => topic.Chapter)
                         .ThenInclude(chapter => chapter.Subject)
                             .ThenInclude(subject => subject.LearningClass)
-                .FirstOrDefaultAsync(item => item.Id == request.LessonId.Value, cancellationToken)
+                .FirstOrDefaultAsync(item => item.Id == request.LessonId.Value && item.IsPublished && item.Topic.IsPublished && item.Topic.Chapter.IsPublished && item.Topic.Chapter.Subject.IsPublished && item.Topic.Chapter.Subject.LearningClass.IsPublished, cancellationToken)
             : null;
 
         var keyword = request.Question.Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .FirstOrDefault(word => word.Length >= 5 && word.All(char.IsLetter));
-        var source = keyword == null
+        var source = keyword == null || lesson == null
             ? null
             : await _context.SourceBooks.AsNoTracking()
-                .Where(book => book.ExtractionStatus == "EXTRACTED" && book.ExtractedText.Contains(keyword))
+                .Where(book => book.IsActive && book.VerificationStatus == "OFFICIAL_PDF_VERIFIED" && book.ExtractionStatus == "EXTRACTED" &&
+                    book.ClassLevel == lesson.Topic.Chapter.Subject.LearningClass.Name && book.Subject == lesson.Topic.Chapter.Subject.Name && book.ExtractedText.Contains(keyword))
                 .Select(book => new { book.OriginalFileName, book.ClassLevel, book.LanguageVersion, book.ExtractedText })
                 .FirstOrDefaultAsync(cancellationToken);
         var sourceContext = source == null
             ? null
             : $"Book: {source.OriginalFileName}; Class: {source.ClassLevel}; Language: {source.LanguageVersion}; Text excerpt: {TrimExcerpt(source.ExtractedText, keyword!)}";
 
+        var timer = Stopwatch.StartNew();
         var answer = await _aiLearningService.AskTutorAsync(request.Question, lesson, sourceContext, cancellationToken);
+        await _usage.RecordAsync("Tutor", timer.ElapsedMilliseconds, !answer.Contains("unavailable", StringComparison.OrdinalIgnoreCase) && !answer.Contains("could not reach", StringComparison.OrdinalIgnoreCase), cancellationToken);
         return Json(new { message = answer });
-    }
-
-    [Authorize]
-    [HttpPost("attempt")]
-    public async Task<IActionResult> RecordAttempt([FromBody] AttemptRequest request, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(request.Question) || string.IsNullOrWhiteSpace(request.Answer)) return BadRequest();
-        _context.QuestionAttempts.Add(new QuestionAttempt
-        {
-            UserId = User.FindFirstValue(ClaimTypes.NameIdentifier)!,
-            LessonId = request.LessonId,
-            QuestionText = request.Question,
-            StudentAnswer = request.Answer,
-            IsCorrect = request.IsCorrect,
-            Score = request.Score,
-            Feedback = request.Feedback ?? string.Empty
-        });
-        await _context.SaveChangesAsync(cancellationToken);
-        return Ok();
     }
 
     private static string TrimExcerpt(string text, string keyword)
@@ -87,4 +74,3 @@ public class AiController : Controller
 }
 
 public record TutorRequest(string Question, int? LessonId);
-public record AttemptRequest(int? LessonId, string Question, string Answer, bool IsCorrect, decimal Score, string? Feedback);

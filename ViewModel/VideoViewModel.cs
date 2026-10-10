@@ -21,5 +21,6 @@ namespace EduMation.Models
         public string? ThumbnailUrl { get; set; }
 
         public string? VideoUrl { get; set; }
+        public bool IsPublished { get; set; }
     }
 }

@@ -18,7 +18,7 @@
             <a class="class-tile" asp-controller="Learn" asp-action="Class" asp-route-classSlug="@learningClass.Slug">
                 <span class="class-number">@learningClass.Name.Replace("Class ", "")</span>
                 <span class="class-name">@learningClass.Name</span>
-                <span class="class-meta">@learningClass.Subjects.Count subjects ready</span>
+                <span class="class-meta">@learningClass.Subjects.Count subjects in the catalog</span>
                 <span class="tile-arrow">Open class &rarr;</span>
             </a>
         }

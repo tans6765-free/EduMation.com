@@ -1,0 +1,7 @@
+@model EduMation.Models.SitePage
+<section class="page-heading">
+    <p class="eyebrow">Your learning path</p>
+    <h1>@Model.Title</h1>
+    <div class="site-page-body">@Model.Body</div>
+</section>
+<a class="nav-cta" asp-controller="Learn" asp-action="Index">Explore lessons</a>

@@ -9,7 +9,7 @@ public class SourceBook
     [Required, StringLength(260)]
     public string OriginalFileName { get; set; } = string.Empty;
 
-    [Required, StringLength(180)]
+    [Required, StringLength(500)]
     public string RelativePath { get; set; } = string.Empty;
 
     [Required, StringLength(80)]
@@ -29,7 +29,9 @@ public class SourceBook
 
     public DateTime ImportedAtUtc { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
+    public bool IsManagedFile { get; set; }
     public int PageCount { get; set; }
     public string ExtractedText { get; set; } = string.Empty;
+    [StringLength(40)]
     public string ExtractionStatus { get; set; } = "NOT_EXTRACTED";
 }

@@ -1,32 +1,20 @@
-﻿@model IEnumerable<EduMation.Models.Video>
-@{
-    ViewData["Title"] = "Admin Dashboard";
-}
-<h1>Admin Dashboard</h1>
-<p>
-    <a asp-action="Create" class="btn btn-primary">Upload New Video</a>
-</p>
-<table class="table table-dark">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Genre</th>
-            <th>Upload Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@Html.DisplayFor(modelItem => item.Title)</td>
-                <td>@Html.DisplayFor(modelItem => item.Genre)</td>
-                <td>@Html.DisplayFor(modelItem => item.UploadDate)</td>
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-secondary">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@model EduMation.ViewModel.AdminDashboardViewModel
+@{ ViewData["Title"] = "Admin Dashboard"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">EduMation operations</p><h1>Admin dashboard</h1><p class="hero-copy">Learner activity, curriculum readiness, and learning media.</p></div><a asp-action="Create" class="button button-primary">Upload media</a></section>
+<section class="content-section"><div class="progress-overview admin-metrics">
+    <div><span>Total students</span><strong>@Model.TotalStudents</strong></div><div><span>Active students · 7 days</span><strong>@Model.ActiveStudents</strong></div><div><span>Published lessons</span><strong>@Model.PublishedLessons</strong></div><div><span>Lessons completed</span><strong>@Model.CompletedLessons</strong></div><div><span>Practice attempts</span><strong>@Model.PracticeAttempts</strong></div><div><span>Average practice score</span><strong>@Model.AveragePracticeScore.ToString("0.0")%</strong></div><div><span>Published videos</span><strong>@Model.PublishedVideos</strong></div><div><span>AI calls · this month</span><strong>@Model.AiCallsThisMonth</strong></div><div><span>AI failures · this month</span><strong>@Model.AiFailuresThisMonth</strong></div><div><span>Average AI response</span><strong>@Model.AverageAiLatencyMs.ToString("0") ms</strong></div>
+</div></section>
+<section class="content-section"><div class="section-heading"><div><p class="eyebrow">AI usage</p><h2>Monthly usage analytics</h2></div></div><div class="lesson-grid">
+    <article class="lesson-card"><h3>By feature</h3>@foreach(var item in Model.AiCallsByFeature){<p><strong>@item.Name</strong> · @item.Calls calls · @item.Failures failed · @item.AverageMs.ToString("0") ms average</p>}</article>
+    <article class="lesson-card"><h3>By provider</h3>@foreach(var item in Model.AiCallsByProvider){<p><strong>@item.Name</strong> · @item.Calls calls · @item.Failures failed · @item.AverageMs.ToString("0") ms average</p>}</article>
+</div></section>
+<section class="content-section"><div class="section-heading"><div><p class="eyebrow">Admin tools</p><h2>Manage learning content</h2></div></div><div class="lesson-grid">
+    <article class="lesson-card"><h3>Curriculum CMS</h3><p>Manage academic years, classes, subjects, chapters, topics, lessons, and publishing.</p><a class="text-link" asp-controller="AdminCurriculum" asp-action="Index">Open curriculum CMS →</a></article>
+    <article class="lesson-card"><h3>NCTB sources</h3><p>Import source PDFs, inspect extraction, and review verification status.</p><a class="text-link" asp-controller="Curriculum" asp-action="Index">Review sources →</a></article>
+    <article class="lesson-card"><h3>Media library</h3><p>Upload secure video and image assets and control publication.</p><a class="text-link" asp-action="Index">Manage media →</a></article>
+    <article class="lesson-card"><h3>Question bank</h3><p>Review AI-generated questions before publishing them to learners.</p><a class="text-link" asp-controller="AdminQuestions" asp-action="Index">Review questions →</a></article>
+    <article class="lesson-card"><h3>Public pages</h3><p>Edit public page text and SEO descriptions.</p><a class="text-link" asp-controller="AdminPages" asp-action="Index">Manage public pages →</a></article>
+    <article class="lesson-card"><h3>Welcome email</h3><p>Edit the congratulatory email sent after a student's account is verified.</p><a class="text-link" asp-controller="AdminWelcomeEmail" asp-action="Index">Edit welcome email</a></article>
+    <article class="lesson-card"><h3>Students and messages</h3><p>Filter and export student records, or send a message to an individual or class.</p><a class="text-link" asp-controller="AdminStudents" asp-action="Index">Manage students</a> · <a class="text-link" asp-controller="AdminMessages" asp-action="Index">Send an email</a></article>
+    <article class="lesson-card"><h3>Accounts and books</h3><p>Manage user roles and the NCTB book library.</p><a class="text-link" asp-controller="UserRoles" asp-action="Index">User roles</a> · <a class="text-link" asp-controller="Books" asp-action="Index">Book library</a></article>
+</div></section>

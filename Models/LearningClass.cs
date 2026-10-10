@@ -13,6 +13,8 @@ public class LearningClass
     public string Slug { get; set; } = string.Empty;
 
     public int DisplayOrder { get; set; }
-    public bool IsPublished { get; set; } = true;
+    public bool IsPublished { get; set; }
+    public int? AcademicYearId { get; set; }
+    public AcademicYear? AcademicYear { get; set; }
     public ICollection<Subject> Subjects { get; set; } = new List<Subject>();
 }

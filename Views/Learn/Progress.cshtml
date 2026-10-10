@@ -17,7 +17,29 @@
         <div><span>Completed lessons</span><strong>@Model.CompletedLessons</strong></div>
         <div><span>Available lessons</span><strong>@Model.TotalLessons</strong></div>
         <div><span>Keep going</span><strong>@(Math.Max(0, Model.TotalLessons - Model.CompletedLessons))</strong></div>
+        <div><span>Practice marks</span><strong>@Model.PracticeMarks.ToString("0.##")</strong></div>
+        <div><span>Learning level</span><strong>Level @Model.Level</strong></div>
     </div>
+</section>
+
+<section class="content-section" id="achievements">
+    <div class="section-heading"><div><p class="eyebrow">Milestones</p><h2>Badges earned</h2></div></div>
+    @if (Model.Achievements.Count > 0)
+    {
+        <div class="achievement-grid">
+            @foreach (var achievement in Model.Achievements)
+            {
+                <article class="achievement-badge">
+                    <span aria-hidden="true">@achievement.Icon</span>
+                    <div><strong>@achievement.Title</strong><p>@achievement.Description</p><time datetime="@achievement.EarnedAtUtc.ToString("O")">Earned @achievement.EarnedAtUtc.ToLocalTime().ToString("MMM d, yyyy")</time></div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state"><h2>Your first badge is waiting.</h2><p>Complete your profile and keep learning to collect achievements.</p></div>
+    }
 </section>
 
 <section class="content-section">

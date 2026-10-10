@@ -22,6 +22,15 @@
 </section>
 
 <section class="content-section home-section">
+    @if (Model.ContinueLesson?.Lesson is { IsPublished: true } continueLesson)
+    {
+        <article class="lesson-card continue-learning-card">
+            <p class="eyebrow">Pick up where you left off</p>
+            <h2>@continueLesson.Title</h2>
+            <p>@Model.ContinueLesson.PercentComplete% complete</p>
+            <a class="button button-primary" asp-controller="Learn" asp-action="Lesson" asp-route-id="@continueLesson.Id">Continue learning</a>
+        </article>
+    }
     <div class="section-heading">
         <div>
             <p class="eyebrow">Your starting point</p>
@@ -78,11 +87,3 @@
     </div>
 </section>
 
-<section class="protijog-band">
-    <div>
-        <p class="eyebrow">Coming next</p>
-        <h2>Learn it on EduMation.<br /><em>Practice it on Protijog.</em></h2>
-        <p>When Protijog is ready, its EduMation section will connect each lesson to deeper problem solving, quizzes, and exams.</p>
-    </div>
-    <a class="button button-light" href="/protijog-coming-soon">Explore Protijog</a>
-</section>

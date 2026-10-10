@@ -13,5 +13,8 @@ public class LessonProgress
     public Lesson Lesson { get; set; } = null!;
     public int PercentComplete { get; set; }
     public bool IsCompleted { get; set; }
+    public double LastPositionSeconds { get; set; }
+    public DateTime? StartedAtUtc { get; set; }
+    public DateTime? CompletedAtUtc { get; set; }
     public DateTime LastViewedAt { get; set; }
 }

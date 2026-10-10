@@ -1,0 +1,14 @@
+@model EduMation.ViewModel.LessonEditViewModel
+@{ ViewData["Title"] = "Edit Lesson"; }
+<section class="content-section"><p class="eyebrow">Curriculum CMS · Versioned lesson</p><h1>Edit @Model.Title</h1><form asp-action="EditLesson" asp-route-id="@Model.Id" method="post" class="curriculum-edit-form">
+    <input asp-for="Id" type="hidden" />
+    <label asp-for="Title"></label><input asp-for="Title" required maxlength="180" />
+    <label asp-for="Slug"></label><input asp-for="Slug" required maxlength="180" />
+    <label asp-for="Description"></label><textarea asp-for="Description" required maxlength="1200"></textarea>
+    <label asp-for="Summary"></label><textarea asp-for="Summary" maxlength="4000"></textarea>
+    <label asp-for="LearningObjectives"></label><textarea asp-for="LearningObjectives" maxlength="800"></textarea>
+    <label asp-for="KeyConcepts"></label><textarea asp-for="KeyConcepts" maxlength="4000"></textarea>
+    <label asp-for="DurationMinutes"></label><input asp-for="DurationMinutes" type="number" min="0" max="600" />
+    <label asp-for="DisplayOrder"></label><input asp-for="DisplayOrder" type="number" />
+    <button class="button button-primary" type="submit">Save lesson version</button> <a class="button button-outline" asp-action="Index">Cancel</a>
+</form></section>

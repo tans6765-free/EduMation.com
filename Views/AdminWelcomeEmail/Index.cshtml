@@ -1,0 +1,20 @@
+@model EduMation.ViewModel.AdminWelcomeEmailViewModel
+@{ ViewData["Title"] = "Welcome email"; }
+
+<section class="page-hero compact-hero">
+    <div><p class="eyebrow">Student communications</p><h1>Welcome email</h1><p class="hero-copy">This editable email is sent after a new student verifies their account.</p></div>
+</section>
+
+<section class="content-section">
+    <form asp-controller="AdminWelcomeEmail" asp-action="Save" method="post" class="lesson-card profile-form">
+        <div asp-validation-summary="All" class="text-danger"></div>
+        <label asp-for="Subject">Email subject</label>
+        <input asp-for="Subject" maxlength="160" />
+        <span asp-validation-for="Subject" class="text-danger"></span>
+        <label asp-for="Body">Email message</label>
+        <textarea asp-for="Body" rows="18" maxlength="30000"></textarea>
+        <span asp-validation-for="Body" class="text-danger"></span>
+        <p class="form-text">Personalize with: <code>{FirstName}</code>, <code>{FullName}</code>, <code>{UserId}</code>, <code>{Email}</code>, <code>{Class}</code>, <code>{LoginUrl}</code>, <code>{CalendarUrl}</code>, <code>{PracticeUrl}</code>, <code>{WebsiteName}</code>.</p>
+        <button class="button button-primary" type="submit">Save welcome email</button>
+    </form>
+</section>

@@ -28,7 +28,7 @@ namespace EduMation.Controllers
             }
 
             var watchHistory = await _context.WatchHistories
-                .Where(wh => wh.UserId == userId)
+                .Where(wh => wh.UserId == userId && wh.Video.IsPublished)
                 .Include(wh => wh.Video)
                 .OrderByDescending(wh => wh.WatchDate)
                 .ToListAsync();
@@ -53,7 +53,7 @@ namespace EduMation.Controllers
 
             _context.WatchHistories.RemoveRange(watchHistory);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Watch history cleared for user {UserId}", userId);
+            _logger.LogInformation("Watch history cleared for the current learner.");
 
             return RedirectToAction(nameof(Index));
         }

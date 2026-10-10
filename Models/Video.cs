@@ -23,5 +23,6 @@ namespace EduMation.Models
         public string? VideoUrl { get; set; }
 
         public DateTime UploadDate { get; set; }
+        public bool IsPublished { get; set; }
     }
 }

@@ -1,0 +1,18 @@
+@model IReadOnlyList<EduMation.Models.SourceBook>
+@{ ViewData["Title"] = "NCTB Book Library"; var isAdmin = User.IsInRole("Admin"); }
+<section class="page-hero books-hero">
+    <p class="eyebrow">NCTB 2026 • Digital library</p><h1>Books for every step forward 📚</h1>
+    <p class="hero-copy">Find your class and subject, then read online or download the PDF.</p>
+    @if (isAdmin) { <p class="muted-copy">@ViewBag.TotalBooks books indexed. The configured source folder is scanned in place; source files are not copied.</p> }
+</section>
+<section class="content-section">
+    <form method="get" class="card-panel book-filters">
+        <label>Class <select name="grade"><option value="">All classes</option>@for (var grade = 1; grade <= 12; grade++) { <option value="@grade" selected="@(ViewBag.Grade == grade)">Class @grade</option> }</select></label>
+        <label>Version <select name="version"><option value="">All versions</option><option selected="@(ViewBag.Version == "Bangla Version")">Bangla Version</option><option selected="@(ViewBag.Version == "English Version")">English Version</option></select></label>
+        <label>Subject <select name="subject"><option value="">All subjects</option>@foreach (var subject in (IEnumerable<string>)ViewBag.Subjects) { <option selected="@(ViewBag.Subject == subject)">@subject</option> }</select></label>
+        <button class="button button-primary" type="submit">Find books</button>
+    </form>
+    @if (Model.Count == 0) { <div class="empty-state"><h2>No books match those filters yet</h2><p>Try a different class or version.</p></div> }
+    else { <div class="book-grid">@foreach (var book in Model) { <article class="book-card"><img class="book-cover" src="@Url.Action("Cover", new { id = book.Id })" alt="First page cover of @book.Subject" loading="lazy" /><p class="eyebrow">@book.ClassLevel · @book.LanguageVersion</p><h2>@(string.IsNullOrWhiteSpace(book.Subject) ? "Book title needs review" : book.Subject)</h2><div class="book-actions"><a class="button button-primary" asp-action="Read" asp-route-id="@book.Id" target="_blank" rel="noopener">Read</a><a class="button button-secondary" asp-action="Download" asp-route-id="@book.Id">Download</a></div>@if (isAdmin) { <small>@book.VerificationStatus</small><form asp-action="Remove" asp-route-id="@book.Id" method="post" onsubmit="return confirm('Remove this book from the library?')"><button class="button button-secondary" type="submit">Remove</button></form> }</article> }</div> }
+</section>
+@if (isAdmin) { <section class="content-section card-panel"><h2>Manage PDFs</h2><form asp-action="Scan" method="post"><button class="button button-secondary" type="submit">Scan configured source folder</button></form><hr /><form asp-action="Upload" method="post" enctype="multipart/form-data" class="book-upload"><label>PDF file <input type="file" name="pdf" accept="application/pdf,.pdf" required /></label><label>Class <select name="grade">@for (var grade = 1; grade <= 12; grade++) { <option value="@grade">Class @grade</option> }</select></label><label>Version <select name="version"><option>Bangla Version</option><option>English Version</option></select></label><label>Subject <input name="subject" maxlength="160" required /></label><button class="button button-primary" type="submit">Upload book</button></form></section> }

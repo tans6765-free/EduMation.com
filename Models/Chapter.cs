@@ -10,7 +10,7 @@ public class Chapter
     public string Title { get; set; } = string.Empty;
 
     public int DisplayOrder { get; set; }
-    public bool IsPublished { get; set; } = true;
+    public bool IsPublished { get; set; }
     public int SubjectId { get; set; }
     public Subject Subject { get; set; } = null!;
     public ICollection<Topic> Topics { get; set; } = new List<Topic>();

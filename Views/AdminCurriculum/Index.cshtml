@@ -1,0 +1,52 @@
+@model EduMation.ViewModel.CurriculumManagementViewModel
+@{
+    ViewData["Title"] = "Curriculum Management";
+}
+<section class="page-hero compact-hero"><div><p class="eyebrow">Admin content management</p><h1>Curriculum management</h1><p class="hero-copy">Build versioned academic curriculum from verified source content. New curriculum records begin as drafts.</p></div></section>
+
+<section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Curriculum tree</p><h2>Academic years and learning content</h2></div></div>
+    <div class="import-list">
+        @foreach (var learningClass in Model.Classes)
+        {
+            <details class="import-row" open>
+            <summary><strong>@learningClass.Name</strong> <span>@learningClass.AcademicYear?.Name · @(learningClass.IsPublished ? "Published" : "Draft")</span></summary>
+            <form asp-action="SetNodePublished" method="post" class="node-publish"><input type="hidden" name="type" value="class"/><input type="hidden" name="id" value="@learningClass.Id"/><input type="hidden" name="published" value="@(!learningClass.IsPublished)"/><button class="text-link" type="submit">@(learningClass.IsPublished ? "Unpublish class" : "Publish class")</button></form>
+                @foreach (var subject in learningClass.Subjects.OrderBy(x => x.DisplayOrder))
+                {
+                    <div class="curriculum-node"><strong>@subject.Name</strong> <span>@(subject.IsPublished ? "Published" : "Draft")</span><form asp-action="SetNodePublished" method="post" class="node-publish"><input type="hidden" name="type" value="subject"/><input type="hidden" name="id" value="@subject.Id"/><input type="hidden" name="published" value="@(!subject.IsPublished)"/><button class="text-link" type="submit">@(subject.IsPublished ? "Unpublish" : "Publish")</button></form>
+                    @foreach (var chapter in subject.Chapters.OrderBy(x => x.DisplayOrder))
+                    {
+                        <div class="curriculum-node"><strong>@chapter.Title</strong> <span>@(chapter.IsPublished ? "Published" : "Draft")</span><form asp-action="SetNodePublished" method="post" class="node-publish"><input type="hidden" name="type" value="chapter"/><input type="hidden" name="id" value="@chapter.Id"/><input type="hidden" name="published" value="@(!chapter.IsPublished)"/><button class="text-link" type="submit">@(chapter.IsPublished ? "Unpublish" : "Publish")</button></form>
+                        @foreach (var topic in chapter.Topics.OrderBy(x => x.DisplayOrder))
+                        {
+                            <div class="curriculum-node"><strong>@topic.Title</strong> <span>@(topic.IsPublished ? "Published" : "Draft")</span><form asp-action="SetNodePublished" method="post" class="node-publish"><input type="hidden" name="type" value="topic"/><input type="hidden" name="id" value="@topic.Id"/><input type="hidden" name="published" value="@(!topic.IsPublished)"/><button class="text-link" type="submit">@(topic.IsPublished ? "Unpublish" : "Publish")</button></form>
+                            @foreach (var lesson in topic.Lessons.OrderBy(x => x.DisplayOrder))
+                            {
+                                <div class="curriculum-lesson"><span>@lesson.Title · @(lesson.IsPublished ? "Published" : "Draft") · v@lesson.Version</span><a asp-action="EditLesson" asp-route-id="@lesson.Id">Edit</a>
+                                    <form asp-controller="AdminQuestions" asp-action="Generate" asp-route-lessonId="@lesson.Id" method="post"><button class="text-link" type="submit">Generate questions</button></form>
+                                    <form asp-action="SetLessonPublished" asp-route-id="@lesson.Id" method="post"><input type="hidden" name="published" value="@(!lesson.IsPublished)" /><button class="text-link" type="submit">@(lesson.IsPublished ? "Unpublish" : "Publish")</button></form>
+                                </div>
+                            }
+                            </div>
+                        }
+                        </div>
+                    }
+                    </div>
+                }
+            </details>
+        }
+        @if (Model.Classes.Count == 0) { <p class="empty-state">No classes are configured yet. Create an academic year and curriculum structure below.</p> }
+    </div>
+</section>
+
+<section class="content-section curriculum-admin-grid">
+    <article class="lesson-card"><h2>Academic year</h2><form asp-action="CreateAcademicYear" method="post"><label>Name</label><input name="name" required maxlength="40" placeholder="2026" /><label>Starts</label><input name="startsOn" type="date" required /><label>Ends</label><input name="endsOn" type="date" required /><label class="form-check mt-2"><input name="isCurrent" type="checkbox" value="true" /> Current year</label><button class="button button-primary" type="submit">Add year</button></form></article>
+    <article class="lesson-card"><h2>Class</h2><form asp-action="CreateClass" method="post"><label>Academic year</label><select name="academicYearId" required>@foreach(var year in Model.AcademicYears){<option value="@year.Id">@year.Name</option>}</select><label>Name</label><input name="name" required maxlength="80" placeholder="Class 5" /><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="class-5" /><label>Order</label><input name="displayOrder" type="number" value="1" /><button class="button button-primary" type="submit">Add draft class</button></form></article>
+    <article class="lesson-card"><h2>Subject</h2><form asp-action="CreateSubject" method="post"><label>Class</label><select name="learningClassId" required>@foreach(var item in Model.Classes){<option value="@item.Id">@item.Name · @item.AcademicYear?.Name</option>}</select><label>Name</label><input name="name" required maxlength="100" /><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" /><label>Order</label><input name="displayOrder" type="number" value="1" /><button class="button button-primary" type="submit">Add draft subject</button></form></article>
+    <article class="lesson-card"><h2>Chapter</h2><form asp-action="CreateChapter" method="post"><label>Subject</label><select name="subjectId" required>@foreach(var item in Model.Subjects){<option value="@item.Id">@item.Name</option>}</select><label>Title</label><input name="title" required maxlength="150" /><label>Order</label><input name="displayOrder" type="number" value="1" /><button class="button button-primary" type="submit">Add draft chapter</button></form></article>
+    <article class="lesson-card"><h2>Topic</h2><form asp-action="CreateTopic" method="post"><label>Chapter</label><select name="chapterId" required>@foreach(var item in Model.Chapters){<option value="@item.Id">@item.Subject.Name · @item.Title</option>}</select><label>Title</label><input name="title" required maxlength="150" /><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" /><label>Order</label><input name="displayOrder" type="number" value="1" /><button class="button button-primary" type="submit">Add draft topic</button></form></article>
+    <article class="lesson-card"><h2>Lesson</h2><form asp-action="CreateLesson" method="post"><label>Topic</label><select name="topicId" required>@foreach(var item in Model.Topics){<option value="@item.Id">@item.Chapter.Subject.Name · @item.Chapter.Title · @item.Title</option>}</select><label>Title</label><input name="title" required maxlength="180" /><label>Slug</label><input name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" /><label>Description</label><textarea name="description" required maxlength="1200"></textarea><label>Summary</label><textarea name="summary" maxlength="4000"></textarea><label>Learning objectives</label><textarea name="learningObjectives" maxlength="800"></textarea><label>Key concepts</label><textarea name="keyConcepts" maxlength="4000"></textarea><label>Duration (minutes)</label><input name="durationMinutes" type="number" min="0" max="600" value="0" /><label>Order</label><input name="displayOrder" type="number" value="1" /><button class="button button-primary" type="submit">Add draft lesson</button></form></article>
+</section>
+
+<section class="content-section"><h2>Academic years</h2><div class="class-grid">@foreach(var year in Model.AcademicYears){<article class="lesson-card"><h3>@year.Name @(year.IsCurrent ? "· Current" : "")</h3><p>@year.StartsOn – @year.EndsOn</p></article>}</div></section>

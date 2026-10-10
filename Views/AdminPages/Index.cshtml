@@ -1,0 +1,9 @@
+@model IReadOnlyList<EduMation.Models.SitePage>
+@{ ViewData["Title"] = "Page CMS"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">Site content management</p><h1>Public pages</h1><p class="hero-copy">Edit page text, SEO descriptions, and publication status.</p></div><a class="button button-primary" asp-action="Create">Create page</a></section>
+<section class="content-section"><div class="import-list">
+@foreach (var sitePage in Model)
+{
+    <article class="import-row"><div><strong>@sitePage.Title</strong><span>/pages/@sitePage.Slug · @(sitePage.IsPublished ? "Published" : "Draft") · updated @sitePage.UpdatedAtUtc.ToString("yyyy-MM-dd")</span><p>@sitePage.MetaDescription</p></div><div class="question-review-actions"><a class="button button-outline" asp-action="Edit" asp-route-id="@sitePage.Id">Edit</a>@if(sitePage.IsPublished){<form asp-action="Unpublish" asp-route-id="@sitePage.Id" method="post"><button class="button button-outline" type="submit">Unpublish</button></form>}</div></article>
+}
+</div></section>

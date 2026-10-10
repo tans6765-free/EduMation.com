@@ -1,26 +1,51 @@
+@using System.Collections.Generic
+@using EduMation.Models
 @{
     ViewData["Title"] = "Practice";
+    var lessons = ViewBag.PracticeLessons as IEnumerable<Lesson> ?? Array.Empty<Lesson>();
 }
 
 <section class="page-hero">
     <div>
         <p class="eyebrow">Learn, then test yourself</p>
         <h1>Practice belongs beside every lesson.</h1>
-        <p class="hero-copy">Start with a quick EduMation check. When Protijog is ready, its Edumation section will open the deeper practice set for the same topic.</p>
+        <p class="hero-copy">Choose a published lesson to get an AI-generated question set. Multiple choice is worth 1 mark, short responses 3, and explanations 5, with partial credit for written answers.</p>
     </div>
 </section>
 
 <section class="practice-grid content-section">
     <article class="practice-card practice-primary">
-        <span class="practice-label">Available now</span>
-        <h2>Quick practice</h2>
-        <p>Short checks will give immediate feedback without taking you away from the lesson flow.</p>
-        <a class="button button-primary" href="#coming-soon">Explore practice</a>
+        <span class="practice-label">AI question sets</span>
+        <h2>Practice a lesson</h2>
+        <p>Questions are generated from lesson summaries and reviewed curriculum content. Written answers receive partial-credit grading.</p>
+        <a class="button button-primary" asp-controller="Learn" asp-action="Curriculum">Browse curriculum</a>
     </article>
     <article class="practice-card">
-        <span class="practice-label">Protijog integration</span>
-        <h2>Practice on Protijog</h2>
-        <p>The future Protijog Edumation section will contain topic practice, deeper quizzes, and exam challenges for EduMation learners.</p>
-        <a class="button button-outline" href="#coming-soon">Protijog coming soon</a>
+        <span class="practice-label">Need a hand?</span>
+        <h2>Ask EduMation AI</h2>
+        <p>Get help with website settings and, when you open a lesson, ask questions about its learning content.</p>
+        <a class="button button-outline" asp-controller="Ai" asp-action="Chat">Open Ask AI</a>
     </article>
+</section>
+
+<section class="content-section">
+    <div class="section-heading"><div><p class="eyebrow">Choose a lesson</p><h2>AI practice questions</h2></div></div>
+    @if (lessons.Any())
+    {
+        <div class="lesson-grid">
+        @foreach (var lesson in lessons)
+        {
+            <article class="lesson-card">
+                <div class="lesson-card-top"><span>@lesson.Topic.Chapter.Subject.LearningClass.Name · @lesson.Topic.Chapter.Subject.Name</span></div>
+                <h3>@lesson.Title</h3>
+                <p>@lesson.Topic.Chapter.Title / @lesson.Topic.Title</p>
+                <a class="button button-primary" asp-controller="Learn" asp-action="LessonPractice" asp-route-id="@lesson.Id">Start AI practice</a>
+            </article>
+        }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state"><h2>Lesson content is being prepared</h2><p>AI practice needs a published lesson with a summary, description, or key concepts. Browse the curriculum to see what is available.</p><a class="button button-outline" asp-controller="Learn" asp-action="Curriculum">Browse curriculum</a></div>
+    }
 </section>

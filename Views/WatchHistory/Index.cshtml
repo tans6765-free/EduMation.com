@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Watch History";
 }
-<h1 style="margin-bottom: -7rem; font-size: 2.5rem; font-weight: bold;">Watch History</h1>
+<section class="page-hero compact-hero"><div><p class="eyebrow">Your learning activity</p><h1>Watch history</h1><p class="hero-copy">Pick up from your last playback position.</p></div></section>
 <div class="container">
     @if (Model.Any())
     {
@@ -28,9 +28,11 @@
                             <h5 class="card-title">@item.Video.Title</h5>
                             <p class="card-text">
                                 <small class="text-muted">
-                                    @item.Video.Genre • Watched on @item.WatchDate.ToString("MMM dd, yyyy HH:mm") • Watched @item.WatchCount time@(item.WatchCount > 1 ? "s" : "")
+                                    @item.ProgressPercent% complete · @TimeSpan.FromSeconds(item.LastPositionSeconds).ToString(@"mm\:ss") · Last viewed @item.WatchDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
                                 </small>
                             </p>
+                            <div class="progress-track"><span style="width:@item.ProgressPercent%"></span></div>
+                            <a class="button button-primary mt-3" asp-controller="Videos" asp-action="Details" asp-route-id="@item.VideoId">Continue</a>
                         </div>
                     </div>
                 </div>

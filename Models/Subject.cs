@@ -13,7 +13,7 @@ public class Subject
     public string Slug { get; set; } = string.Empty;
 
     public int DisplayOrder { get; set; }
-    public bool IsPublished { get; set; } = true;
+    public bool IsPublished { get; set; }
     public int LearningClassId { get; set; }
     public LearningClass LearningClass { get; set; } = null!;
     public ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();

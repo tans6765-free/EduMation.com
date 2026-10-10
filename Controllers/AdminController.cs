@@ -3,26 +3,48 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EduMation.Data;
 using EduMation.Models;
+using EduMation.Services;
+using EduMation.ViewModel;
 
 namespace EduMation.Controllers
 {
-    [Authorize(Roles = "Admin,Editor,Tutor")]
+    [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IMediaStorageService _mediaStorage;
         private readonly ILogger<AdminController> _logger;
 
-        public AdminController(ApplicationDbContext context, IWebHostEnvironment environment, ILogger<AdminController> logger)
+        public AdminController(ApplicationDbContext context, IMediaStorageService mediaStorage, ILogger<AdminController> logger)
         {
             _context = context;
-            _environment = environment;
+            _mediaStorage = mediaStorage;
             _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Videos.ToListAsync());
+            var studentIds = _context.UserRoles.Join(_context.Roles, userRole => userRole.RoleId, role => role.Id,
+                (userRole, role) => new { userRole.UserId, role.Name }).Where(item => item.Name == "Student").Select(item => item.UserId);
+            var recentCutoff = DateTime.UtcNow.AddDays(-7);
+            var model = new AdminDashboardViewModel
+            {
+                TotalStudents = await studentIds.Distinct().CountAsync(),
+                ActiveStudents = await _context.LessonProgresses.Where(progress => studentIds.Contains(progress.UserId) && progress.LastViewedAt >= recentCutoff).Select(progress => progress.UserId).Distinct().CountAsync(),
+                PublishedLessons = await _context.Lessons.CountAsync(lesson => lesson.IsPublished && lesson.Topic.IsPublished && lesson.Topic.Chapter.IsPublished && lesson.Topic.Chapter.Subject.IsPublished && lesson.Topic.Chapter.Subject.LearningClass.IsPublished),
+                CompletedLessons = await _context.LessonProgresses.CountAsync(progress => progress.IsCompleted),
+                PracticeAttempts = await _context.QuestionAttempts.CountAsync(),
+                AveragePracticeScore = await _context.QuestionAttempts.Where(attempt => attempt.MaximumScore > 0).Select(attempt => (decimal?)(attempt.Score * 100 / attempt.MaximumScore)).AverageAsync() ?? 0,
+                PublishedVideos = await _context.Videos.CountAsync(video => video.IsPublished)
+            };
+            var aiSince = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+            var aiLogs = _context.AiUsageLogs.Where(log => log.CreatedAtUtc >= aiSince);
+            model.AiCallsThisMonth = await aiLogs.CountAsync();
+            model.AiFailuresThisMonth = await aiLogs.CountAsync(log => log.Outcome == "Failure");
+            model.AverageAiLatencyMs = await aiLogs.Select(log => (double?)log.DurationMs).AverageAsync() ?? 0;
+            model.AiCallsByFeature = await aiLogs.GroupBy(log => log.Feature).Select(group => new AiUsageMetricViewModel { Name = group.Key, Calls = group.Count(), Failures = group.Count(log => log.Outcome == "Failure"), AverageMs = group.Average(log => log.DurationMs) }).OrderByDescending(item => item.Calls).ToListAsync();
+            model.AiCallsByProvider = await aiLogs.GroupBy(log => log.Provider).Select(group => new AiUsageMetricViewModel { Name = group.Key, Calls = group.Count(), Failures = group.Count(log => log.Outcome == "Failure"), AverageMs = group.Average(log => log.DurationMs) }).OrderByDescending(item => item.Calls).ToListAsync();
+            return View(model);
         }
 
         public IActionResult Create()
@@ -36,8 +58,6 @@ namespace EduMation.Controllers
         {
             _logger.LogInformation("Create action called at {Time}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
             _logger.LogInformation("Model: Title={Title}, Genre={Genre}, Description={Description}", model.Title, model.Genre, model.Description);
-            _logger.LogInformation("VideoFile: Name={Name}, Length={Length}, ContentType={ContentType}", videoFile?.FileName, videoFile?.Length, videoFile?.ContentType);
-            _logger.LogInformation("ThumbnailFile: Name={Name}, Length={Length}, ContentType={ContentType}", thumbnailFile?.FileName, thumbnailFile?.Length, thumbnailFile?.ContentType);
 
             if (!ModelState.IsValid)
             {
@@ -50,82 +70,21 @@ namespace EduMation.Controllers
             if (videoFile == null || videoFile.Length == 0)
             {
                 ModelState.AddModelError("videoFile", "Video file is required.");
-                TempData["ErrorMessage"] = "Video file is required.";
                 return View(model);
             }
 
-            if (videoFile.Length > 100 * 1024 * 1024) // 100 MB limit
-            {
-                ModelState.AddModelError("videoFile", "Video file size cannot exceed 100 MB.");
-                TempData["ErrorMessage"] = "Video file size cannot exceed 100 MB.";
-                return View(model);
-            }
-
-            if (!videoFile.ContentType.StartsWith("video/"))
-            {
-                ModelState.AddModelError("videoFile", "Invalid video file format.");
-                TempData["ErrorMessage"] = "Invalid video file format.";
-                return View(model);
-            }
-
-            var videoFileName = Guid.NewGuid().ToString() + Path.GetExtension(videoFile.FileName);
-            var videoPath = Path.Combine(_environment.WebRootPath, "Uploads", "videos", videoFileName);
-            var videoDir = Path.GetDirectoryName(videoPath);
-            if (!string.IsNullOrEmpty(videoDir) && !Directory.Exists(videoDir))
-            {
-                Directory.CreateDirectory(videoDir);
-            }
+            string videoUrl;
+            string thumbnailUrl = "/Uploads/thumbnails/default.jpg";
             try
             {
-                using (var stream = new FileStream(videoPath, FileMode.Create, FileAccess.Write))
-                {
-                    await videoFile.CopyToAsync(stream);
-                }
-                _logger.LogInformation("Video saved to: {Path}", videoPath);
+                videoUrl = await _mediaStorage.SaveAsync(videoFile, MediaAssetKind.Video);
+                if (thumbnailFile is { Length: > 0 })
+                    thumbnailUrl = await _mediaStorage.SaveAsync(thumbnailFile, MediaAssetKind.Image);
             }
-            catch (Exception ex)
+            catch (InvalidDataException)
             {
-                _logger.LogError(ex, "Failed to upload video file. Check file permissions for {Path} and server configuration.", videoPath);
-                TempData["ErrorMessage"] = $"Failed to upload video file: {ex.Message}. Check file permissions for {videoPath} and server configuration.";
+                ModelState.AddModelError("videoFile", "Use a supported video or image file with a valid file signature. Video size limit: 100 MB; thumbnail: 10 MB.");
                 return View(model);
-            }
-
-            string? thumbnailFileName = null;
-            if (thumbnailFile != null && thumbnailFile.Length > 0)
-            {
-                if (thumbnailFile.Length > 10 * 1024 * 1024) // 10 MB limit
-                {
-                    ModelState.AddModelError("thumbnailFile", "Thumbnail file size cannot exceed 10 MB.");
-                    TempData["ErrorMessage"] = "Thumbnail file size cannot exceed 10 MB.";
-                    return View(model);
-                }
-                if (!thumbnailFile.ContentType.StartsWith("image/"))
-                {
-                    ModelState.AddModelError("thumbnailFile", "Invalid thumbnail file format.");
-                    TempData["ErrorMessage"] = "Invalid thumbnail file format.";
-                    return View(model);
-                }
-                thumbnailFileName = Guid.NewGuid().ToString() + Path.GetExtension(thumbnailFile.FileName);
-                var thumbnailPath = Path.Combine(_environment.WebRootPath, "Uploads", "thumbnails", thumbnailFileName);
-                var thumbnailDir = Path.GetDirectoryName(thumbnailPath);
-                if (!string.IsNullOrEmpty(thumbnailDir) && !Directory.Exists(thumbnailDir))
-                {
-                    Directory.CreateDirectory(thumbnailDir);
-                }
-                try
-                {
-                    using (var stream = new FileStream(thumbnailPath, FileMode.Create, FileAccess.Write))
-                    {
-                        await thumbnailFile.CopyToAsync(stream);
-                    }
-                    _logger.LogInformation("Thumbnail saved to: {Path}", thumbnailPath);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to upload thumbnail file. Check file permissions for {Path} and server configuration.", thumbnailPath);
-                    TempData["ErrorMessage"] = $"Failed to upload thumbnail file: {ex.Message}. Check file permissions for {thumbnailPath} and server configuration.";
-                    return View(model);
-                }
             }
 
             var video = new Video
@@ -133,9 +92,10 @@ namespace EduMation.Controllers
                 Title = model.Title,
                 Genre = model.Genre,
                 Description = model.Description,
-                VideoUrl = $"/Uploads/videos/{videoFileName}",
-                ThumbnailUrl = thumbnailFileName != null ? $"/Uploads/thumbnails/{thumbnailFileName}" : "/Uploads/thumbnails/default.jpg",
-                UploadDate = DateTime.Now
+                VideoUrl = videoUrl,
+                ThumbnailUrl = thumbnailUrl,
+                UploadDate = DateTime.UtcNow,
+                IsPublished = true
             };
 
             try
@@ -148,7 +108,7 @@ namespace EduMation.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred while saving the video to the database.");
-                TempData["ErrorMessage"] = $"An error occurred while saving the video to the database: {ex.Message}. Check database connectivity and schema.";
+                TempData["ErrorMessage"] = "The video could not be saved. Please try again or contact support.";
                 return View(model);
             }
 
@@ -173,7 +133,8 @@ namespace EduMation.Controllers
                 Genre = video.Genre,
                 Description = video.Description,
                 ThumbnailUrl = video.ThumbnailUrl,
-                VideoUrl = video.VideoUrl
+                VideoUrl = video.VideoUrl,
+                IsPublished = video.IsPublished
             };
             return View(model);
         }
@@ -198,63 +159,22 @@ namespace EduMation.Controllers
                 return NotFound();
             }
 
-            string? videoFileName = null;
             if (videoFile != null && videoFile.Length > 0)
             {
-                if (videoFile.Length > 100 * 1024 * 1024)
-                {
-                    ModelState.AddModelError("videoFile", "Video file size cannot exceed 100 MB.");
-                    return View(model);
-                }
-                if (!videoFile.ContentType.StartsWith("video/"))
-                {
-                    ModelState.AddModelError("videoFile", "Invalid video file format.");
-                    return View(model);
-                }
-                videoFileName = Guid.NewGuid().ToString() + Path.GetExtension(videoFile.FileName);
-                var videoPath = Path.Combine(_environment.WebRootPath, "Uploads", "videos", videoFileName);
-                var videoDir = Path.GetDirectoryName(videoPath);
-                if (!string.IsNullOrEmpty(videoDir))
-                {
-                    Directory.CreateDirectory(videoDir);
-                }
-                using (var stream = new FileStream(videoPath, FileMode.Create))
-                {
-                    await videoFile.CopyToAsync(stream);
-                }
-                video.VideoUrl = $"/Uploads/videos/{videoFileName}";
+                try { video.VideoUrl = await _mediaStorage.SaveAsync(videoFile, MediaAssetKind.Video); }
+                catch (InvalidDataException) { ModelState.AddModelError("videoFile", "Choose a supported video file with a valid signature (maximum 100 MB)."); return View(model); }
             }
 
-            string? thumbnailFileName = null;
             if (thumbnailFile != null && thumbnailFile.Length > 0)
             {
-                if (thumbnailFile.Length > 10 * 1024 * 1024)
-                {
-                    ModelState.AddModelError("thumbnailFile", "Thumbnail file size cannot exceed 10 MB.");
-                    return View(model);
-                }
-                if (!thumbnailFile.ContentType.StartsWith("image/"))
-                {
-                    ModelState.AddModelError("thumbnailFile", "Invalid thumbnail file format.");
-                    return View(model);
-                }
-                thumbnailFileName = Guid.NewGuid().ToString() + Path.GetExtension(thumbnailFile.FileName);
-                var thumbnailPath = Path.Combine(_environment.WebRootPath, "Uploads", "thumbnails", thumbnailFileName);
-                var thumbnailDir = Path.GetDirectoryName(thumbnailPath);
-                if (!string.IsNullOrEmpty(thumbnailDir))
-                {
-                    Directory.CreateDirectory(thumbnailDir);
-                }
-                using (var stream = new FileStream(thumbnailPath, FileMode.Create))
-                {
-                    await thumbnailFile.CopyToAsync(stream);
-                }
-                video.ThumbnailUrl = $"/Uploads/thumbnails/{thumbnailFileName}";
+                try { video.ThumbnailUrl = await _mediaStorage.SaveAsync(thumbnailFile, MediaAssetKind.Image); }
+                catch (InvalidDataException) { ModelState.AddModelError("thumbnailFile", "Choose a supported image file with a valid signature (maximum 10 MB)."); return View(model); }
             }
 
             video.Title = model.Title;
             video.Genre = model.Genre;
             video.Description = model.Description;
+            video.IsPublished = model.IsPublished;
 
             try
             {

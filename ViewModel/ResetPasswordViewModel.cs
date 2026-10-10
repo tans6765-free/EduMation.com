@@ -4,6 +4,9 @@ namespace EduMation.ViewModels
 {
     public class ResetPasswordViewModel
     {
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Code is required")]
         public string Code { get; set; } = string.Empty;
 

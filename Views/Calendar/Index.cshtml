@@ -1,0 +1,67 @@
+@model EduMation.ViewModel.CalendarViewModel
+@{
+    ViewData["Title"] = "My Calendar";
+    ViewData["MetaDescription"] = "Plan exam days, assignments, study sessions, and personal reminders.";
+    var monthStart = Model.Month;
+    var gridStart = monthStart.AddDays(-((int)monthStart.DayOfWeek));
+    var next = monthStart.AddMonths(1);
+    var previous = monthStart.AddMonths(-1);
+    var dhakaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Dhaka");
+    var eventsByDay = Model.Reminders.GroupBy(item => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(item.StartsAt, dhakaTimeZone).DateTime)).ToDictionary(group => group.Key, group => group.ToList());
+}
+<section class="page-hero compact-hero calendar-hero">
+    <div><p class="eyebrow">Your plans, your pace</p><h1>My calendar</h1><p class="hero-copy">Keep exam days, assignments, and study plans on track.</p></div>
+    <div class="streak-card"><span class="streak-icon">🔥</span><div><strong>@Model.CurrentStreak day@(Model.CurrentStreak == 1 ? "" : "s")</strong><span>current learning streak</span></div></div>
+</section>
+<section class="google-calendar-panel">
+    <div><strong>Google Calendar</strong><p>@(Model.GoogleCalendarConnected ? "Your new and updated reminders sync with Google Calendar." : "Connect Google Calendar to see your EduMation reminders there too.")</p></div>
+    @if (Model.GoogleCalendarConnected) { <form asp-action="DisconnectGoogle" method="post"><button class="button button-outline" type="submit">Disconnect</button></form> }
+    else { <a class="button button-outline" asp-action="ConnectGoogle">Connect Google Calendar</a> }
+</section>
+<div class="calendar-layout">
+    <section class="calendar-panel" aria-label="Calendar for @Model.Month.ToString("MMMM yyyy")">
+        <header class="calendar-toolbar"><a class="button button-outline" asp-action="Index" asp-route-year="@previous.Year" asp-route-month="@previous.Month" aria-label="Previous month">‹</a><h2>@Model.Month.ToString("MMMM yyyy")</h2><a class="button button-outline" asp-action="Index" asp-route-year="@next.Year" asp-route-month="@next.Month" aria-label="Next month">›</a></header>
+        <div class="calendar-grid calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+        <div class="calendar-grid">
+            @for (var index = 0; index < 42; index++)
+            {
+                var date = gridStart.AddDays(index);
+                var dayEvents = eventsByDay.GetValueOrDefault(date) ?? new List<EduMation.Models.CalendarReminder>();
+                <div class="calendar-day @(date.Month == monthStart.Month ? "" : "is-outside") @(date == DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, dhakaTimeZone).DateTime) ? "is-today" : "")">
+                    <span class="calendar-date">@date.Day</span>
+                    @foreach (var reminder in dayEvents.Take(2)) { <span class="calendar-event event-@reminder.Category.ToLowerInvariant()" title="@reminder.Title">@reminder.Title</span> }
+                    @if (dayEvents.Count > 2) { <span class="calendar-more">+@(dayEvents.Count - 2) more</span> }
+                </div>
+            }
+        </div>
+    </section>
+    <aside class="calendar-sidebar">
+        <section class="calendar-form-panel" id="reminder-form-panel">
+            <p class="eyebrow">Make a plan</p><h2 data-reminder-form-title>Add a reminder</h2>
+            <form asp-action="Save" method="post" class="calendar-form">
+                @Html.AntiForgeryToken()<input type="hidden" name="Id" data-reminder-id />
+                <label for="reminder-title">What is it?</label><input id="reminder-title" name="Title" maxlength="140" required placeholder="e.g. Science exam" />
+                <div class="form-row"><div><label for="reminder-category">Type</label><select id="reminder-category" name="Category"><option>Exam</option><option>Assignment</option><option>Study</option><option>Personal</option><option>Other</option></select></div><div><label for="reminder-start">Date and time (Dhaka)</label><input id="reminder-start" name="StartsAtLocal" type="datetime-local" required /></div></div>
+                <label class="check-label"><input type="checkbox" name="IsAllDay" value="true" /> All day</label><input type="hidden" name="IsAllDay" value="false" />
+                <label for="reminder-notes">Notes <span>(optional)</span></label><textarea id="reminder-notes" name="Notes" maxlength="2000" rows="2"></textarea>
+                <label for="reminder-lead">Remind me</label><select id="reminder-lead" name="ReminderMinutes"><option value="0">At the time</option><option value="15">15 minutes before</option><option value="60">1 hour before</option><option value="1440" selected>1 day before</option><option value="10080">1 week before</option></select>
+                <label class="check-label"><input type="checkbox" name="EmailNotification" value="true" checked /> Email reminder</label><input type="hidden" name="EmailNotification" value="false" />
+                <label class="check-label"><input type="checkbox" name="BrowserNotification" value="true" checked /> Browser notification while EduMation is open</label><input type="hidden" name="BrowserNotification" value="false" />
+                <div class="calendar-form-actions"><button class="button button-primary" type="submit">Save reminder</button><button class="button button-outline" type="button" data-browser-notification>Enable browser alerts</button></div>
+                <button class="text-link" type="button" data-cancel-edit hidden>Cancel editing</button>
+            </form>
+        </section>
+        <section class="upcoming-panel"><p class="eyebrow">This month</p><h2>Upcoming</h2>
+            @if (Model.Reminders.Count == 0) { <p class="muted-copy">Your calendar is clear. Add a reminder to get started.</p> }
+            @foreach (var reminder in Model.Reminders.OrderBy(item => item.StartsAt))
+            {
+                var localReminder = TimeZoneInfo.ConvertTime(reminder.StartsAt, dhakaTimeZone); var localEditValue = localReminder.ToString("yyyy-MM-ddTHH:mm");
+                <article class="upcoming-event">
+                    <div class="event-date"><strong>@localReminder.ToString("dd")</strong><span>@localReminder.ToString("MMM")</span></div>
+                    <div class="event-details"><span class="event-category">@reminder.Category</span><h3>@reminder.Title</h3><p>@(reminder.IsAllDay ? "All day" : localReminder.ToString("ddd · h:mm tt") + " (Dhaka)")</p></div>
+                    <div class="event-actions"><button class="text-link" type="button" data-edit-reminder data-id="@reminder.Id" data-title="@reminder.Title" data-category="@reminder.Category" data-start="@localEditValue" data-notes="@reminder.Notes" data-lead="@reminder.ReminderMinutes" data-email="@reminder.EmailNotification.ToString().ToLowerInvariant()" data-browser="@reminder.BrowserNotification.ToString().ToLowerInvariant()" data-all-day="@reminder.IsAllDay.ToString().ToLowerInvariant()">Edit</button><form asp-action="Delete" asp-route-id="@reminder.Id" method="post"><button class="text-link" type="submit">Delete</button></form></div>
+                </article>
+            }
+        </section>
+    </aside>
+</div>

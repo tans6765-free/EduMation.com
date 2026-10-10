@@ -46,8 +46,18 @@ public class UserRolesController : Controller
         if (user == null) return NotFound();
 
         var currentRoles = await _userManager.GetRolesAsync(user);
+        if (User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == id && role != "Admin")
+        {
+            TempData["Message"] = "You cannot remove your own administrator access.";
+            return RedirectToAction(nameof(Index));
+        }
+        if (currentRoles.Contains("Admin") && role != "Admin" && (await _userManager.GetUsersInRoleAsync("Admin")).Count <= 1)
+        {
+            TempData["Message"] = "Keep at least one administrator account active.";
+            return RedirectToAction(nameof(Index));
+        }
         await _userManager.RemoveFromRolesAsync(user, currentRoles);
-        if (role != "Student") await _userManager.AddToRoleAsync(user, role);
+        await _userManager.AddToRoleAsync(user, role);
         TempData["Message"] = "User role updated.";
         return RedirectToAction(nameof(Index));
     }

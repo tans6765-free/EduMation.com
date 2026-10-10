@@ -1,0 +1,16 @@
+@model IReadOnlyList<EduMation.Models.StudentNotification>
+@{
+    ViewData["Title"] = "Notifications";
+    ViewData["MetaDescription"] = "Your EduMation learning and calendar notifications.";
+}
+<section class="page-hero compact-hero"><div><p class="eyebrow">Your updates</p><h1>Notifications</h1><p class="hero-copy">Reminders and learning updates, all in one place.</p></div><a class="button button-outline" asp-controller="Calendar" asp-action="Index">Open calendar</a></section>
+<section class="content-section notification-list">
+    @if (Model.Count == 0) { <article class="empty-state"><h2>All caught up!</h2><p>New reminders and achievements will show up here.</p></article> }
+    @foreach (var notification in Model)
+    {
+        <article class="notification-card @(notification.ReadAtUtc == null ? "is-unread" : "")">
+            <div><p class="eyebrow">@notification.CreatedAtUtc.LocalDateTime.ToString("ddd, MMM d · h:mm tt")</p><h2>@notification.Title</h2><p>@notification.Message</p></div>
+            <div class="notification-actions"><a class="text-link" href="@notification.Link">Open</a>@if (notification.ReadAtUtc == null) { <form asp-action="MarkRead" asp-route-id="@notification.Id" method="post"><button class="text-link" type="submit">Mark read</button></form> }</div>
+        </article>
+    }
+</section>

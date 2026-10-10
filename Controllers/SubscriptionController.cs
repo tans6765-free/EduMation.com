@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EduMation.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class SubscriptionController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -86,10 +86,9 @@ namespace EduMation.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Message"] = "Subscription upgraded successfully.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred while upgrading your subscription. Please try again.";
-                Console.WriteLine($"Upgrade error: {ex.Message}");
             }
 
             return RedirectToAction(nameof(Index));
@@ -184,7 +183,7 @@ namespace EduMation.Controllers
                 await _context.SaveChangesAsync();
                 TempData["Message"] = "Subscription created successfully.";
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred while creating your subscription. Please try again.";
                 return View(model);
@@ -227,7 +226,6 @@ namespace EduMation.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = "An error occurred while deleting your subscription. Please try again.";
-                Console.WriteLine($"Delete error: {ex.Message}");
             }
 
             return RedirectToAction(nameof(Index));
@@ -244,7 +242,6 @@ namespace EduMation.Controllers
 
             if (subscription == null)
             {
-                Console.WriteLine("No active subscription found for user: " + userId);
                 return Json(new { success = false, message = "No active subscription found." });
             }
 
@@ -258,13 +255,11 @@ namespace EduMation.Controllers
                 subscription.TotalWatched = totalWatched;
                 await _context.SaveChangesAsync();
 
-                Console.WriteLine($"TotalWatched updated for user {userId}: {subscription.TotalWatched}");
                 return Json(new { success = true, totalWatched = subscription.TotalWatched });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"IncrementVideosWatched error for user {userId}: {ex.Message}");
-                return Json(new { success = false, message = "Error updating TotalWatched: " + ex.Message });
+                return Json(new { success = false, message = "Unable to update viewing activity right now." });
             }
         }
     }

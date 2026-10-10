@@ -10,9 +10,9 @@
     </div>
 </section>
 
-<section class="chat-shell" data-tutor>
+<section class="chat-shell" data-tutor data-lesson-id="@(ViewBag.LessonId?.ToString() ?? "")">
     <div class="chat-messages" data-chat-messages>
-        <div class="chat-message chat-message-ai">Hi. What are you learning today?</div>
+        <div class="chat-message chat-message-ai">@(ViewBag.LessonId == null ? "Hi. I can help you find lessons, practice, saved items, or your progress." : "Hi. Ask me about this lesson and I’ll explain it another way.")</div>
     </div>
     <div class="chat-suggestions">
         <button type="button" data-suggestion="Explain this simply">Explain this simply</button>
@@ -46,7 +46,8 @@
         addMessage('Thinking...', 'ai');
         const thinking = messages.lastElementChild;
         try {
-            const response = await fetch('/ai/chat/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, lessonId: null }) });
+            const lessonId = root.dataset.lessonId ? Number(root.dataset.lessonId) : null;
+            const response = await fetch('/ai/chat/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, lessonId }) });
             const data = await response.json();
             thinking.textContent = data.message || 'I could not answer that yet.';
         } catch {

@@ -1,49 +1,71 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using EduMation.Data;
 using EduMation.Models;
 using EduMation.Services;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
-
-// Configure Kestrel to allow larger file uploads
-builder.WebHost.ConfigureKestrel(options =>
+builder.Services.AddMemoryCache();
+builder.Services.AddRateLimiter(options =>
 {
-    options.Limits.MaxRequestBodySize = 100L * 1024L * 1024L; // 100 MB
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ =>
+            new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+    options.AddPolicy("sensitive-email", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ =>
+            new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(15), QueueLimit = 0, AutoReplenishment = true }));
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
+builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = 100L * 1024L * 1024L);
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 100L * 1024L * 1024L);
 
-// Configure form options to handle large file uploads
-builder.Services.Configure<FormOptions>(options =>
-{
-    options.MultipartBodyLengthLimit = 100L * 1024L * 1024L; // 100 MB
-});
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("ConnectionStrings:DefaultConnection must be configured.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
-builder.Services.AddHttpClient<IAiLearningService, GeminiLearningService>();
+builder.Services.Configure<OpenAiOptions>(builder.Configuration.GetSection("OpenAI"));
+var aiProvider = builder.Configuration["Ai:Provider"] ?? "Gemini";
+if (aiProvider.Equals("Gemini", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddHttpClient<IAiLearningService, GeminiLearningService>();
+else if (aiProvider.Equals("OpenAI", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddHttpClient<IAiLearningService, OpenAiLearningService>();
+else
+    throw new InvalidOperationException("Ai:Provider must be set to Gemini or OpenAI.");
 builder.Services.Configure<NctbContentOptions>(builder.Configuration.GetSection("Nctb"));
 builder.Services.AddSingleton<NctbPdfExtractionService>();
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
+builder.Services.Configure<AdminProvisioningOptions>(builder.Configuration.GetSection("AdminProvisioning"));
+builder.Services.AddTransient<IEmailSender, MailKitEmailSender>();
+builder.Services.AddScoped<IStudentEngagementService, StudentEngagementService>();
+builder.Services.AddScoped<AdminProvisioner>();
+builder.Services.AddScoped<IMediaStorageService, LocalMediaStorageService>();
+builder.Services.AddScoped<DevelopmentDataSeeder>();
+builder.Services.AddScoped<NctbCatalogSeeder>();
+builder.Services.AddScoped<NctbBookCatalogSeeder>();
+builder.Services.AddScoped<IAiUsageRecorder, AiUsageRecorder>();
+builder.Services.AddHostedService<ReminderDispatcher>();
+builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration["DataProtection:KeyPath"] ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "keys"))).SetApplicationName("EduMation");
+builder.Services.AddHttpClient<IGoogleCalendarService, GoogleCalendarService>();
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+    {
+        options.SignIn.RequireConfirmedEmail = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+    })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
-
-// Add logging
-builder.Services.AddLogging(logging =>
-{
-    logging.AddConsole();
-    logging.AddDebug();
-});
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromHours(3));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -51,237 +73,53 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseDeveloperExceptionPage(); // Enable detailed error pages in development
+    app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment()) app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-// Seed data
-using (var scope = app.Services.CreateScope())
+// Only role names are provisioned generally. No default administrator is created;
+// sample curriculum is added by DevelopmentDataSeeder only in Development.
+await using (var scope = app.Services.CreateAsyncScope())
 {
     var services = scope.ServiceProvider;
     var logger = services.GetRequiredService<ILogger<Program>>();
-    var context = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-
     try
     {
-        // Ensure database is created and migrations are applied
-        await context.Database.MigrateAsync();
-        await context.Database.ExecuteSqlRawAsync("""
-            IF OBJECT_ID(N'[SourceBooks]') IS NULL
-            BEGIN
-                CREATE TABLE [SourceBooks] (
-                    [Id] int NOT NULL IDENTITY,
-                    [OriginalFileName] nvarchar(260) NOT NULL,
-                    [RelativePath] nvarchar(180) NOT NULL,
-                    [ClassLevel] nvarchar(80) NOT NULL,
-                    [LanguageVersion] nvarchar(80) NOT NULL,
-                    [Subject] nvarchar(160) NOT NULL,
-                    [AcademicYear] nvarchar(40) NOT NULL,
-                    [VerificationStatus] nvarchar(60) NOT NULL,
-                    [ImportedAtUtc] datetime2 NOT NULL,
-                    [IsActive] bit NOT NULL,
-                    CONSTRAINT [PK_SourceBooks] PRIMARY KEY ([Id])
-                );
-                CREATE UNIQUE INDEX [IX_SourceBooks_RelativePath] ON [SourceBooks] ([RelativePath]);
-            END
-            IF COL_LENGTH(N'[SourceBooks]', N'PageCount') IS NULL ALTER TABLE [SourceBooks] ADD [PageCount] int NOT NULL CONSTRAINT [DF_SourceBooks_PageCount] DEFAULT 0;
-            IF COL_LENGTH(N'[SourceBooks]', N'ExtractedText') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractedText] nvarchar(max) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractedText] DEFAULT N'';
-            IF COL_LENGTH(N'[SourceBooks]', N'ExtractionStatus') IS NULL ALTER TABLE [SourceBooks] ADD [ExtractionStatus] nvarchar(40) NOT NULL CONSTRAINT [DF_SourceBooks_ExtractionStatus] DEFAULT N'NOT_EXTRACTED';
-            IF OBJECT_ID(N'[QuestionAttempts]') IS NULL
-            BEGIN
-                CREATE TABLE [QuestionAttempts] (
-                    [Id] int NOT NULL IDENTITY,
-                    [UserId] nvarchar(450) NOT NULL,
-                    [LessonId] int NULL,
-                    [QuestionText] nvarchar(4000) NOT NULL,
-                    [StudentAnswer] nvarchar(4000) NOT NULL,
-                    [IsCorrect] bit NOT NULL,
-                    [Score] decimal(5,2) NOT NULL,
-                    [Feedback] nvarchar(1200) NOT NULL,
-                    [CreatedAtUtc] datetime2 NOT NULL,
-                    CONSTRAINT [PK_QuestionAttempts] PRIMARY KEY ([Id])
-                );
-                CREATE INDEX [IX_QuestionAttempts_UserId] ON [QuestionAttempts] ([UserId]);
-            END
-            """);
-        logger.LogInformation("Database migrations applied successfully.");
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "An error occurred while applying database migrations.");
-        throw; // Rethrow to surface the error when running
-    }
+        await services.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+        var roles = services.GetRequiredService<RoleManager<IdentityRole>>();
+        foreach (var role in new[] { "Admin", "Tutor", "Editor", "Student" })
+            if (!await roles.RoleExistsAsync(role))
+                await roles.CreateAsync(new IdentityRole(role));
+        await services.GetRequiredService<AdminProvisioner>().ProvisionAsync();
+        await services.GetRequiredService<NctbCatalogSeeder>().SeedAsync();
+        await services.GetRequiredService<NctbBookCatalogSeeder>().SeedAsync();
+        if (app.Environment.IsDevelopment())
+            await services.GetRequiredService<DevelopmentDataSeeder>().SeedAsync();
 
-    try
-    {
-        // Seed roles
-        foreach (var role in new[] { "Admin", "Tutor", "Editor" })
+        var db = services.GetRequiredService<ApplicationDbContext>();
+        if (!await db.SitePages.AnyAsync(page => page.Slug == "welcome-email-template"))
         {
-            if (!await roleManager.RoleExistsAsync(role))
+            db.SitePages.Add(new SitePage
             {
-                await roleManager.CreateAsync(new IdentityRole(role));
-                logger.LogInformation("{Role} role created.", role);
-            }
-        }
-
-        // Seed admin user
-        var adminEmail = "admin@edumation.com";
-        var adminUser = await userManager.FindByEmailAsync(adminEmail);
-        if (adminUser == null)
-        {
-            adminUser = new ApplicationUser
-            {
-                UserName = adminEmail,
-                Email = adminEmail,
-                EmailConfirmed = true
-            };
-            var result = await userManager.CreateAsync(adminUser, "Admin@123");
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(adminUser, "Admin");
-                logger.LogInformation("Admin user created and assigned to Admin role.");
-
-                // Seed admin profile if not exists
-                var adminProfile = await context.Profiles.FirstOrDefaultAsync(p => p.UserId == adminUser.Id);
-                if (adminProfile == null)
-                {
-                    adminProfile = new Profile
-                    {
-                        UserId = adminUser.Id,
-                        FirstName = "Admin",
-                        LastName = "User",
-                        Email = adminEmail,
-                        Address = "Not specified",
-                    };
-                    context.Profiles.Add(adminProfile);
-                    await context.SaveChangesAsync();
-                    logger.LogInformation("Admin profile seeded.");
-                }
-            }
-            else
-            {
-                logger.LogError("Failed to create admin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
-            }
-        }
-
-        // Seed sample videos
-        if (!context.Videos.Any())
-        {
-            context.Videos.AddRange(
-                new Video
-                {
-                    Title = "Introduction to Programming",
-                    Genre = "Education",
-                    Description = "Learn the basics of programming.",
-                    VideoUrl = "/Uploads/videos/sample-video.mp4",
-                    ThumbnailUrl = "/Uploads/thumbnails/sample-thumbnail.jpg",
-                    UploadDate = DateTime.Now
-                },
-                new Video
-                {
-                    Title = "Advanced Mathematics",
-                    Genre = "Education",
-                    Description = "Explore advanced mathematical concepts.",
-                    VideoUrl = "/Uploads/videos/math-video.mp4",
-                    ThumbnailUrl = "/Uploads/thumbnails/math-thumbnail.jpg",
-                    UploadDate = DateTime.Now
-                }
-            );
-            await context.SaveChangesAsync();
-            logger.LogInformation("Sample videos seeded.");
-        }
-
-        if (!context.LearningClasses.Any())
-        {
-            var classFive = new LearningClass
-            {
-                Name = "Class 5",
-                Slug = "class-5",
-                DisplayOrder = 5
-            };
-            var mathematics = new Subject
-            {
-                Name = "Mathematics",
-                Slug = "mathematics",
-                DisplayOrder = 1,
-                LearningClass = classFive
-            };
-            var fractions = new Chapter
-            {
-                Title = "Fractions",
-                DisplayOrder = 1,
-                Subject = mathematics
-            };
-            var equivalentFractions = new Topic
-            {
-                Title = "Equivalent Fractions",
-                Slug = "equivalent-fractions",
-                DisplayOrder = 1,
-                Chapter = fractions
-            };
-            var sampleVideo = await context.Videos.OrderBy(video => video.Id).FirstOrDefaultAsync();
-            var lesson = new Lesson
-            {
-                Title = "Understanding Equivalent Fractions",
-                Slug = "understanding-equivalent-fractions",
-                Description = "Build a clear mental model for comparing and creating equivalent fractions.",
-                LearningObjectives = "Recognize equivalent fractions; Compare fractions with the same value; Prepare for deeper practice",
-                DurationMinutes = 12,
-                DisplayOrder = 1,
-                Topic = equivalentFractions,
-                Video = sampleVideo
-            };
-
-            context.LearningClasses.Add(classFive);
-            context.Lessons.Add(lesson);
-            await context.SaveChangesAsync();
-
-            context.ProtijogMappings.Add(new ProtijogMapping
-            {
-                LessonId = lesson.Id,
-                PracticeType = "Topic",
-                Title = "Practice this topic on Protijog",
-                ExternalPath = "/protijog-coming-soon",
-                IsActive = true
+                Slug = "welcome-email-template", Title = "Welcome to EduMation, {FirstName}!",
+                MetaDescription = "Internal welcome-email template; managed by administrators.",
+                Body = "Hi {FirstName},\n\nWelcome to EduMation! Your account is ready, and we’re excited to help you learn.\n\nExplore your class curriculum, save lessons, practice with questions, track your progress, and add important dates to your calendar.\n\nYour EduMation user ID: {UserId}\nYour class: {Class}\n\nStart learning: {LoginUrl}\nYour calendar: {CalendarUrl}\nAI practice: {PracticeUrl}\n\nHappy learning!\nThe EduMation team",
+                IsPublished = false, UpdatedAtUtc = DateTime.UtcNow
             });
-            await context.SaveChangesAsync();
-            logger.LogInformation("Starter curriculum and Protijog placeholder seeded.");
-        }
-
-        var missingClasses = Enumerable.Range(1, 12)
-            .Where(number => !context.LearningClasses.Any(learningClass => learningClass.Slug == $"class-{number}"))
-            .Select(number => new LearningClass
-            {
-                Name = $"Class {number}",
-                Slug = $"class-{number}",
-                DisplayOrder = number,
-                IsPublished = true
-            })
-            .ToList();
-        if (missingClasses.Count > 0)
-        {
-            context.LearningClasses.AddRange(missingClasses);
-            await context.SaveChangesAsync();
-            logger.LogInformation("Visible curriculum sections ensured for classes 1 through 12.");
+            await db.SaveChangesAsync();
         }
     }
-    catch (Exception ex)
+    catch (Exception exception)
     {
-        logger.LogError(ex, "An error occurred while seeding the database.");
-        throw; // Rethrow to surface the error when running
+        logger.LogError(exception, "Application database initialization failed.");
+        throw;
     }
 }
 

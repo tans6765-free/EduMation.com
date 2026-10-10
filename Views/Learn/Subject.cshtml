@@ -40,4 +40,8 @@
             }
         </article>
     }
+    @if (Model.Chapters.Count == 0)
+    {
+        <div class="empty-state"><p class="eyebrow">Chapter list in progress</p><h2>Verified chapter titles are not available yet.</h2><p>The supplied curriculum plans warn that their topic templates are not official chapter titles and require checking against the 2026 NCTB book PDFs. This subject will show chapters here after that verification and import.</p></div>
+    }
 </section>

@@ -1,49 +1,16 @@
-﻿@model IEnumerable<EduMation.Models.Video>
-@{
-    ViewData["Title"] = "My Favorites";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var favoritedVideoIds = ViewBag.FavoritedVideoIds as List<int> ?? new List<int>();
-}
-<div class="container">
-    <h2>My Favorites</h2>
-    @if (!Model.Any())
-    {
-        <p>No favorite videos yet.</p>
-    }
-    else
-    {
-        <div class="row">
-            @foreach (var video in Model)
-            {
-                <div class="col-md-4 mb-4">
-                    <div class="card">
-                        <a href="@Url.Action("Details", "Videos", new { id = video.Id })">
-                            @if (!string.IsNullOrEmpty(video.ThumbnailUrl))
-                            {
-                                <img src="@video.ThumbnailUrl" class="card-img-top" alt="@video.Title Thumbnail" style="height: 200px; object-fit: cover;" />
-                            }
-                            else
-                            {
-                                <img src="/Uploads/thumbnails/default.jpg" class="card-img-top" alt="Default Thumbnail" style="height: 200px; object-fit: cover;" />
-                            }
-                        </a>
-                        <div class="card-body">
-                            <h5 class="card-title" style="color: #D87A3A;">@video.Title</h5>
-                            <p class="card-text">
-                                <small class="text-muted" style="color: #28A745 !important;">@video.Genre • Uploaded on @video.UploadDate.ToString("MMM dd, yyyy")</small>
-                            </p>
-                            <div class="d-flex gap-2">
-                                <a asp-action="Details" asp-controller="Videos" asp-route-id="@video.Id" class="btn btn-success">Watch Now</a>
-                                <form asp-action="Remove" asp-controller="Favorites" method="post">
-                                    <input type="hidden" name="videoId" value="@video.Id" />
-                                    <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to remove this video from favorites?');">Remove from Favorites</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    <a asp-action="Index" asp-controller="Videos" class="btn btn-secondary">Back to Videos</a>
-</div>
+@model EduMation.ViewModel.SavedItemsViewModel
+@{ ViewData["Title"] = "Saved Learning"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">Your learning library</p><h1>Saved</h1><p class="hero-copy">Lessons and videos you want to return to.</p></div></section>
+<section class="content-section">
+    @if (Model.Lessons.Count == 0 && Model.Videos.Count == 0) { <div class="empty-state"><h2>Your saved list is ready</h2><p>Save lessons and videos as you explore.</p></div> }
+    <div class="lesson-grid">
+        @foreach (var saved in Model.Lessons)
+        {
+            <article class="lesson-card"><div class="lesson-card-top"><span class="lesson-chip">@saved.Lesson.Topic.Chapter.Subject.LearningClass.Name · @saved.Lesson.Topic.Chapter.Subject.Name</span><span>@saved.Lesson.DurationMinutes min</span></div><h2>@saved.Lesson.Title</h2><p>@saved.Lesson.Description</p><div class="d-flex gap-2"><a class="button button-primary" asp-controller="Learn" asp-action="Lesson" asp-route-id="@saved.LessonId">Continue</a><form asp-action="RemoveLesson" method="post"><input type="hidden" name="lessonId" value="@saved.LessonId"/><button class="button button-outline" type="submit">Remove saved</button></form></div></article>
+        }
+        @foreach (var video in Model.Videos)
+        {
+            <article class="lesson-card"><h2>@video.Title</h2><p>@video.Description</p><div class="d-flex gap-2"><a class="button button-primary" asp-controller="Videos" asp-action="Details" asp-route-id="@video.Id">Watch</a><form asp-action="Remove" method="post"><input type="hidden" name="videoId" value="@video.Id"/><button class="button button-outline" type="submit">Remove saved</button></form></div></article>
+        }
+    </div>
+</section>

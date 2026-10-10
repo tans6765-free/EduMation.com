@@ -1,109 +1,130 @@
-﻿@model EduMation.Models.Profile
+@model EduMation.Models.Profile
 @{
     ViewData["Title"] = "My Profile";
+    var classes = ViewBag.LearningClasses as IEnumerable<EduMation.Models.LearningClass> ?? Array.Empty<EduMation.Models.LearningClass>();
+    var isComplete = (int)(ViewBag.ProfileCompletion ?? 0) == 100;
+    var isEditing = (bool)(ViewBag.IsEditing ?? false);
+    var badges = ViewBag.Achievements as IEnumerable<EduMation.Models.StudentAchievement> ?? Array.Empty<EduMation.Models.StudentAchievement>();
 }
 
-<h1 style="margin-bottom: -7rem; font-size: 2.5rem; font-weight: bold;">My Profile</h1>
-<div class="container">
-    <div class="card profile-card">
-        <div class="card-body position-relative">
-            <img src="@(Model?.ProfilePicturePath ?? "/images/default-profile.png")" alt="Profile Picture" class="profile-picture" />
-            <h5 class="card-title profile-label">Name: <span class="profile-value">@(Model?.FirstName ?? "User") @(Model?.LastName ?? "")</span></h5>
-            <p class="card-text profile-label">Email: <span class="profile-value">@(Model?.Email ?? "N/A")</span></p>
-            <p class="card-text profile-label">Contact Number: <span class="profile-value">@(Model?.ContactNumber ?? "N/A")</span></p>
-            <p class="card-text profile-label">Age: <span class="profile-value">@(Model?.Age.ToString() ?? "N/A")</span></p>
-            <p class="card-text profile-label">Address: <span class="profile-value">@(Model?.Address ?? "N/A")</span></p>
+<section class="page-hero compact-hero profile-hero">
+    <div>
+        <p class="eyebrow">Your student dashboard</p>
+        <h1>Welcome, @(string.IsNullOrWhiteSpace(Model.FullName) ? "Student" : Model.FullName)</h1>
+        <p class="hero-copy">Your progress, achievements, saved learning, calendar, and account details are all here.</p>
+    </div>
+    <div class="progress-stat"><strong>@ViewBag.ProgressPercent%</strong><span>learning progress</span></div>
+</section>
+
+<section class="content-section profile-content">
+    <div class="profile-completion-card lesson-card">
+        <div class="profile-completion-copy">
+            <p class="eyebrow">@(isComplete ? "Profile badge earned" : "Your next profile step")</p>
+            <h2>@ViewBag.ProfileCompletion% complete</h2>
+            <p>@(isComplete ? "Your profile is complete. Your badge is in achievements." : $"Next: {ViewBag.NextStep}. Finish the steps to earn your profile badge.")</p>
+        </div>
+        <div class="profile-completion-meter" role="progressbar" aria-label="Profile completion" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@ViewBag.ProfileCompletion">
+            <span class="progress-track"><span style="width:@ViewBag.ProfileCompletion%"></span></span>
+            <strong>@ViewBag.ProfileCompletion%</strong>
         </div>
     </div>
 
-    <h3 class="mt-4">Edit Profile</h3>
+    <div class="profile-dashboard-links">
+        <a class="lesson-card" asp-controller="Learn" asp-action="Progress"><strong>Progress</strong><span>@ViewBag.CompletedLessons / @ViewBag.TotalLessons lessons complete</span></a>
+        <a class="lesson-card" asp-controller="Calendar" asp-action="Index"><strong>Calendar</strong><span>Exams, study plans, and reminders</span></a>
+        <a class="lesson-card" asp-controller="WatchHistory" asp-action="Index"><strong>Watch history</strong><span>Continue recent lessons and videos</span></a>
+        <a class="lesson-card" asp-controller="Favorites" asp-action="MyFavorites"><strong>Saved lessons</strong><span>Your favorites and bookmarks</span></a>
+        <a class="lesson-card" asp-controller="Subscription" asp-action="Index"><strong>Subscription details</strong><span>View your current plan information</span></a>
+    </div>
+</section>
 
+<section class="content-section profile-settings">
+    <div class="lesson-card profile-summary">
+        <div class="profile-identity">
+            <img src="@(Model.ProfilePicturePath ?? "/images/default-profile.png")" alt="Profile picture" class="profile-picture" />
+            <div class="profile-identity-copy">
+                <p class="eyebrow">Student account</p>
+                <h2>@(string.IsNullOrWhiteSpace(Model.FullName) ? "Your profile" : Model.FullName)</h2>
+                <p>@Model.Email</p>
+                <span class="profile-verified @(ViewBag.EmailVerified ? "is-verified" : "")">@(ViewBag.EmailVerified ? "Email verified" : "Email not verified")</span>
+            </div>
+        </div>
+        <dl class="profile-details">
+            <div><dt>Class</dt><dd>@(Model.LearningClass?.Name ?? "Not selected")</dd></div>
+            <div><dt>District</dt><dd>@(string.IsNullOrWhiteSpace(Model.District) ? "Not added" : Model.District)</dd></div>
+            <div><dt>Contact</dt><dd>@(string.IsNullOrWhiteSpace(Model.ContactNumber) ? "Not added" : Model.ContactNumber)</dd></div>
+        </dl>
 
-    @if (!ViewData.ModelState.IsValid)
-    {
-        <div class="alert alert-warning">
-            <ul>
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        @if (Model.LearningClass is not null)
+        {
+            <a class="button button-primary profile-curriculum-button" asp-controller="Learn" asp-action="Class" asp-route-classSlug="@Model.LearningClass.Slug">Open my class curriculum <span aria-hidden="true">→</span></a>
+        }
+
+        <div class="profile-badges">
+            <h3>Badges earned</h3>
+            @if (!badges.Any())
+            {
+                <p>Complete your profile and keep learning to earn your first badge.</p>
+            }
+            else
+            {
+                <div class="achievement-list">
+                    @foreach (var badge in badges)
+                    {
+                        <span class="achievement-badge">@badge.Icon @badge.Title</span>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (!isEditing && isComplete)
+        {
+            <a class="button button-outline profile-edit-button" asp-action="Index" asp-route-edit="true">Edit profile</a>
+        }
+        else if (!isEditing)
+        {
+            <div class="profile-next-step">
+                <span class="profile-step-icon" aria-hidden="true">✦</span>
+                <div>
+                    <p class="eyebrow">Next step</p>
+                    <h3>@ViewBag.NextStep</h3>
+                    <p>@(ViewBag.NeedsEmailVerification ? "Verify your email to continue setting up your learning profile." : "Add the next detail to unlock your profile badge and class learning path.")</p>
+                </div>
+                @if ((bool)(ViewBag.NeedsEmailVerification ?? false))
                 {
-                    <li>@error.ErrorMessage</li>
+                    <a class="button button-primary" asp-controller="Account" asp-action="VerifyEmail" asp-route-userId="@Model.UserId">Verify email</a>
                 }
-            </ul>
-        </div>
-    }
-    <form asp-action="Edit" method="post" enctype="multipart/form-data">
-        <input type="hidden" asp-for="Id" />
-        <input type="hidden" asp-for="UserId" />
-        <input type="hidden" asp-for="Email" value="@Model?.Email" readonly />
-        <div class="form-group">
-            <label asp-for="FirstName" class="control-label"></label>
-            <input asp-for="FirstName" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
-            <span asp-validation-for="FirstName" class="text-danger"></span>
-        </div>
-        <div class="form-group">
-            <label asp-for="LastName" class="control-label"></label>
-            <input asp-for="LastName" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
-            <span asp-validation-for="LastName" class="text-danger"></span>
-        </div>
-        <div class="form-group">
-            <label asp-for="ContactNumber" class="control-label"></label>
-            <input asp-for="ContactNumber" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
-            <span asp-validation-for="ContactNumber" class="text-danger"></span>
-        </div>
-        <div class="form-group">
-            <label asp-for="Age" class="control-label"></label>
-            <input asp-for="Age" class="form-control" style="background-color: #2e3738; color: #ffffff;" type="number" />
-            <span asp-validation-for="Age" class="text-danger"></span>
-        </div>
-        <div class="form-group">
-            <label asp-for="Address" class="control-label"></label>
-            <input asp-for="Address" class="form-control" style="background-color: #2e3738; color: #ffffff;" />
-            <span asp-validation-for="Address" class="text-danger"></span>
-        </div>
-        <div class="form-group">
-            <label for="profilePicture" class="control-label">Profile Picture</label>
-            <input type="file" name="profilePicture" class="form-control" accept="image/*" style="background-color: #2e3738; color: #ffffff;" />
-        </div>
-        <div class="form-group mt-3">
-            <button type="submit" class="btn" style="background-color: #D94F00; border-color: #D94F00;">Save Changes</button>
-        </div>
-    </form>
-</div>
+                else
+                {
+                    <a class="button button-primary" asp-action="Index" asp-route-edit="true">Continue profile setup</a>
+                }
+            </div>
+        }
+    </div>
 
-<style>
-    .profile-card {
-        background-color: #1C2526;
-        border: 2px solid #28a745; /* Green border matching search */
-        border-radius: 5px;
+    @if (isEditing)
+    {
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="lesson-card profile-form">
+            <div class="profile-form-heading"><div><p class="eyebrow">Account details</p><h2>Edit your profile</h2><p>Only your name and district are required here. Other details can be added whenever you like.</p></div><a class="text-link" asp-action="Index">Cancel</a></div>
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="UserId" type="hidden" />
+            <input asp-for="Email" type="hidden" />
+            <input asp-for="ProfilePicturePath" type="hidden" />
+            <div class="profile-form-grid">
+                <div class="profile-field profile-field-wide"><label asp-for="FullName"></label><input asp-for="FullName" autocomplete="name" maxlength="120" /><span asp-validation-for="FullName" class="text-danger"></span></div>
+                <div class="profile-field"><label asp-for="District"></label><input asp-for="District" autocomplete="address-level2" maxlength="80" /><span asp-validation-for="District" class="text-danger"></span></div>
+                <div class="profile-field"><label asp-for="ContactNumber">Contact number <span>(optional)</span></label><input asp-for="ContactNumber" autocomplete="tel" maxlength="40" /><span asp-validation-for="ContactNumber" class="text-danger"></span></div>
+                <div class="profile-field"><label asp-for="Age">Age <span>(optional)</span></label><input asp-for="Age" type="number" min="8" max="120" /><span asp-validation-for="Age" class="text-danger"></span></div>
+                <div class="profile-field"><label asp-for="LearningClassId">Class</label><select asp-for="LearningClassId"><option value="">Choose a class</option>@foreach (var item in classes){<option value="@item.Id">@item.Name</option>}</select><span asp-validation-for="LearningClassId" class="text-danger"></span></div>
+                <div class="profile-field profile-field-wide"><label asp-for="Address">Address <span>(optional)</span></label><input asp-for="Address" autocomplete="street-address" maxlength="300" /><span asp-validation-for="Address" class="text-danger"></span></div>
+                <div class="profile-field"><label asp-for="PreferredLanguage">Preferred language</label><select asp-for="PreferredLanguage"><option value="en">English</option><option value="bn">বাংলা</option></select></div>
+                <div class="profile-field profile-field-wide"><label asp-for="LearningPreferences">Learning preferences <span>(optional)</span></label><textarea asp-for="LearningPreferences" rows="3" maxlength="1000" placeholder="Topics or study preferences"></textarea><span asp-validation-for="LearningPreferences" class="text-danger"></span></div>
+                <div class="profile-field profile-field-wide"><label for="profilePicture">Profile picture <span>(optional, up to 5 MB)</span></label><input id="profilePicture" type="file" name="profilePicture" accept=".jpg,.jpeg,.png,.webp,.gif" /></div>
+            </div>
+            <div class="profile-form-actions"><button class="button button-primary" type="submit">Save changes</button><a class="button button-outline" asp-action="Index">Cancel</a></div>
+        </form>
     }
+</section>
 
-    .card-body {
-        color: #ffffff;
-    }
-
-    .profile-label {
-        font-weight: 600; /* Slightly bold */
-    }
-
-    .profile-value {
-        color: #d96e30; /* Rustic orange */
-    }
-
-    .card-title, .card-text {
-        margin-bottom: 10px;
-    }
-
-    .profile-picture {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 50%;
-        border: 2px solid #28a745;
-    }
-</style>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

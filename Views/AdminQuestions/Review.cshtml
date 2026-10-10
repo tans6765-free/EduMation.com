@@ -1,0 +1,17 @@
+@model EduMation.ViewModel.QuestionReviewViewModel
+@{ ViewData["Title"] = "Review Question"; }
+<section class="content-section"><p class="eyebrow">Question review</p><h1>Edit and approve question</h1><p>Each answer option goes on its own line. Correct option uses a zero-based index.</p>
+<form asp-action="Review" asp-route-id="@Model.Id" method="post" class="curriculum-edit-form" data-question-review>
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <label asp-for="QuestionText">Question</label><textarea asp-for="QuestionText" rows="4" maxlength="4000" required></textarea>
+    <label asp-for="QuestionType">Question type</label><select asp-for="QuestionType" data-question-type>@foreach(var type in EduMation.ViewModel.PracticeQuestionViewModel.SupportedQuestionTypes){<option value="@type">@type</option>}</select>
+    <p data-mark-value>Marks: @EduMation.ViewModel.PracticeQuestionViewModel.MarksFor(Model.QuestionType) (fixed by question type)</p>
+    <div data-options-group><label asp-for="OptionsText">Answer options <span>(one per line; required for multiple choice and True/False)</span></label><textarea asp-for="OptionsText" rows="6" data-options-text></textarea></div>
+    <div data-correct-index><label asp-for="CorrectOption">Correct option index (starting at 0)</label><input asp-for="CorrectOption" type="number" min="0" max="5" /></div>
+    <label asp-for="ExpectedAnswer">Expected answer / grading guide</label><textarea asp-for="ExpectedAnswer" rows="4" maxlength="4000" required></textarea>
+    <label asp-for="Difficulty">Difficulty</label><select asp-for="Difficulty"><option>Easy</option><option>Medium</option><option>Hard</option></select>
+    <label asp-for="Explanation">Explanation</label><textarea asp-for="Explanation" rows="4" maxlength="4000" required></textarea>
+    <label asp-for="Decision">Review decision</label><select asp-for="Decision"><option value="approve">Approve</option><option value="reject">Reject</option></select>
+    <button class="button button-primary" type="submit">Save review</button>
+</form></section>

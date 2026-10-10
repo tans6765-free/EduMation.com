@@ -19,4 +19,7 @@ public class LessonDetailsViewModel
     public Lesson Lesson { get; set; } = null!;
     public int ProgressPercent { get; set; }
     public bool IsCompleted { get; set; }
+    public bool IsSaved { get; set; }
+    public double ResumePositionSeconds { get; set; }
+    public IReadOnlyList<Lesson> RelatedLessons { get; set; } = Array.Empty<Lesson>();
 }

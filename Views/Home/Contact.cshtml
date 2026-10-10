@@ -1,0 +1,10 @@
+@model EduMation.Models.SitePage
+<section class="page-heading">
+    <p class="eyebrow">We can help</p>
+    <h1>@Model.Title</h1>
+    <div class="site-page-body">@Model.Body</div>
+    @if (ViewData["SupportEmail"] is string email && !string.IsNullOrWhiteSpace(email))
+    {
+        <p><a href="mailto:@email">@email</a></p>
+    }
+</section>

@@ -1,0 +1,13 @@
+@model IEnumerable<EduMation.Models.Question>
+@{ ViewData["Title"] = "Question Bank Review"; }
+<section class="page-hero compact-hero"><div><p class="eyebrow">Admin review workflow</p><h1>Question bank</h1><p class="hero-copy">AI-generated questions remain drafts until an administrator edits, approves, and publishes them.</p></div></section>
+<section class="content-section"><div class="import-list">
+    @foreach(var question in Model)
+    {
+        <article class="import-row question-review-row"><div><strong>@question.QuestionText</strong><span>@question.Lesson.Title · @question.Difficulty · @question.Status · @question.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</span><p>@question.Explanation</p></div><div class="question-review-actions">
+            @if(question.Status is "AI Generated" or "Under Review" or "Approved") { <a class="button button-outline" asp-action="Review" asp-route-id="@question.Id">Review / edit</a> }
+            @if(question.Status == "Approved") { <form asp-action="Publish" asp-route-id="@question.Id" method="post"><button class="button button-primary" type="submit">Publish</button></form> }
+        </div></article>
+    }
+    @if(!Model.Any()) { <div class="empty-state"><h2>No questions yet</h2><p>Generate questions from a lesson after its summary or key concepts are ready. They will stay unpublished until reviewed.</p><a class="button button-primary" asp-controller="AdminCurriculum" asp-action="Index">Open curriculum CMS</a></div> }
+</div></section>
